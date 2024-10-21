@@ -1,32 +1,60 @@
 package com.greentrade.greentrade.models;
 
+import java.time.LocalDate;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "certificates")
+@Table(name = "certificaten")
 public class Certificate {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
-    private String issuer;
-    private String expirationDate;
+    @Column(nullable = false)
+    private String naam;
 
-    @OneToOne
+    @Column(nullable = false)
+    private String uitgever;
+
+    @Column(name = "uitgiftedatum", nullable = false)
+    private LocalDate uitgifteDatum;
+
+    @Column(name = "vervaldatum")
+    private LocalDate vervaldatum;
+
+    @Column(length = 1000)
+    private String beschrijving;
+
+    @Column(name = "bestandspad")
+    private String bestandsPad;
+
+    @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
-    // Constructors, getters, and setters
-    // ...
+    // Constructors
+    public Certificate() {}
 
+    public Certificate(String naam, String uitgever, LocalDate uitgifteDatum, LocalDate vervaldatum, String beschrijving, String bestandsPad, User user) {
+        this.naam = naam;
+        this.uitgever = uitgever;
+        this.uitgifteDatum = uitgifteDatum;
+        this.vervaldatum = vervaldatum;
+        this.beschrijving = beschrijving;
+        this.bestandsPad = bestandsPad;
+        this.user = user;
+    }
+
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -35,28 +63,52 @@ public class Certificate {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getNaam() {
+        return naam;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setNaam(String naam) {
+        this.naam = naam;
     }
 
-    public String getIssuer() {
-        return issuer;
+    public String getUitgever() {
+        return uitgever;
     }
 
-    public void setIssuer(String issuer) {
-        this.issuer = issuer;
+    public void setUitgever(String uitgever) {
+        this.uitgever = uitgever;
     }
 
-    public String getExpirationDate() {
-        return expirationDate;
+    public LocalDate getUitgifteDatum() {
+        return uitgifteDatum;
     }
 
-    public void setExpirationDate(String expirationDate) {
-        this.expirationDate = expirationDate;
+    public void setUitgifteDatum(LocalDate uitgifteDatum) {
+        this.uitgifteDatum = uitgifteDatum;
+    }
+
+    public LocalDate getVervaldatum() {
+        return vervaldatum;
+    }
+
+    public void setVervaldatum(LocalDate vervaldatum) {
+        this.vervaldatum = vervaldatum;
+    }
+
+    public String getBeschrijving() {
+        return beschrijving;
+    }
+
+    public void setBeschrijving(String beschrijving) {
+        this.beschrijving = beschrijving;
+    }
+
+    public String getBestandsPad() {
+        return bestandsPad;
+    }
+
+    public void setBestandsPad(String bestandsPad) {
+        this.bestandsPad = bestandsPad;
     }
 
     public User getUser() {

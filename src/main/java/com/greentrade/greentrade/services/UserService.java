@@ -1,11 +1,12 @@
 package com.greentrade.greentrade.services;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.greentrade.greentrade.dto.UserDTO;
 import com.greentrade.greentrade.models.User;
 import com.greentrade.greentrade.repositories.UserRepository;
 
@@ -19,41 +20,46 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserDTO> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
-    public Optional<User> getUserById(Long id) {
-        return userRepository.findById(id);
+    public UserDTO getUserById(Long id) {
+        return userRepository.findById(id)
+                .map(this::convertToDTO)
+                .orElse(null);
     }
 
-    public Optional<User> getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+    public UserDTO createUser(UserDTO userDTO) {
+        User user = convertToEntity(userDTO);
+        User savedUser = userRepository.save(user);
+        return convertToDTO(savedUser);
     }
 
-    public User createUser(User user) {
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw new RuntimeException("Email is already in use");
-        }
-        return userRepository.save(user);
-    }
-
-    public User updateUser(Long id, User userDetails) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
-
-        user.setNaam(userDetails.getNaam());
-        user.setEmail(userDetails.getEmail());
-        user.setRole(userDetails.getRole());
-        user.setVerificatieStatus(userDetails.isVerificatieStatus());
-
-        return userRepository.save(user);
+    public UserDTO updateUser(Long id, UserDTO userDTO) {
+        return userRepository.findById(id)
+                .map(user -> {
+                    user.setNaam(userDTO.getNaam());
+                    user.setEmail(userDTO.getEmail());
+                    return convertToDTO(userRepository.save(user));
+                })
+                .orElse(null);
     }
 
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new RuntimeException("User not found with id: " + id);
-        }
         userRepository.deleteById(id);
+    }
+
+    private UserDTO convertToDTO(User user) {
+        return new UserDTO(user.getId(), user.getNaam(), user.getEmail(), user.getRole().toString());
+    }
+
+    private User convertToEntity(UserDTO userDTO) {
+        User user = new User();
+        user.setNaam(userDTO.getNaam());
+        user.setEmail(userDTO.getEmail());
+        return user;
     }
 }

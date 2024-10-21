@@ -41,7 +41,6 @@ public class ProductService {
     }
 
     public Product createProduct(Product product) {
-        // Hier kunt u eventueel extra validatie toevoegen
         return productRepository.save(product);
     }
 

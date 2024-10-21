@@ -1,5 +1,6 @@
 package com.greentrade.greentrade.models;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -38,11 +39,16 @@ public class User {
     private Certificate certificate;
 
     @OneToMany(mappedBy = "verkoper", cascade = CascadeType.ALL)
-    private List<Product> producten;
+    private List<Product> producten = new ArrayList<>();
+
+    @OneToMany(mappedBy = "afzender", cascade = CascadeType.ALL)
+    private List<Message> verzondenBerichten = new ArrayList<>();
+
+    @OneToMany(mappedBy = "ontvanger", cascade = CascadeType.ALL)
+    private List<Message> ontvangenBerichten = new ArrayList<>();
 
     // Constructors
-    public User() {
-    }
+    public User() {}
 
     public User(String naam, String email, String wachtwoord, Role role, boolean verificatieStatus) {
         this.naam = naam;
@@ -111,5 +117,21 @@ public class User {
 
     public void setProducten(List<Product> producten) {
         this.producten = producten;
+    }
+
+    public List<Message> getVerzondenBerichten() {
+        return verzondenBerichten;
+    }
+
+    public void setVerzondenBerichten(List<Message> verzondenBerichten) {
+        this.verzondenBerichten = verzondenBerichten;
+    }
+
+    public List<Message> getOntvangenBerichten() {
+        return ontvangenBerichten;
+    }
+
+    public void setOntvangenBerichten(List<Message> ontvangenBerichten) {
+        this.ontvangenBerichten = ontvangenBerichten;
     }
 }

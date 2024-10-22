@@ -1,14 +1,28 @@
 package com.greentrade.greentrade.dto;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public class TransactionDTO {
     private Long id;
+
+    @NotNull(message = "Koper ID is verplicht")
     private Long koperId;
+
+    @NotNull(message = "Product ID is verplicht")
     private Long productId;
+
+    @NotNull(message = "Bedrag is verplicht")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Bedrag moet groter zijn dan 0")
     private BigDecimal bedrag;
+
+    @NotNull(message = "Datum is verplicht")
     private LocalDateTime datum;
+
+    @NotBlank(message = "Status is verplicht")
     private String status;
 
     // Constructors

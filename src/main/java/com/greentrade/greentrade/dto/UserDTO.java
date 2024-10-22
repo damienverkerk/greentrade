@@ -2,10 +2,22 @@ package com.greentrade.greentrade.dto;
 
 import java.io.Serializable;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class UserDTO implements Serializable {
     private Long id;
+
+    @NotBlank(message = "Naam is verplicht")
+    @Size(min = 2, max = 50, message = "Naam moet tussen 2 en 50 tekens zijn")
     private String naam;
+
+    @NotBlank(message = "Email is verplicht")
+    @Email(message = "Email moet een geldig email adres zijn")
     private String email;
+
+    @NotBlank(message = "Rol is verplicht")
     private String role;
 
     // Constructors

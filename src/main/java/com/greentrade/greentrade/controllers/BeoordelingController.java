@@ -14,49 +14,44 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.greentrade.greentrade.models.Product;
-import com.greentrade.greentrade.models.Review;
+import com.greentrade.greentrade.dto.ReviewDTO;
 import com.greentrade.greentrade.services.BeoordelingService;
-import com.greentrade.greentrade.services.ProductService;
 
 @RestController
 @RequestMapping("/api/beoordelingen")
 public class BeoordelingController {
 
     private final BeoordelingService beoordelingService;
-    private final ProductService productService;
 
     @Autowired
-    public BeoordelingController(BeoordelingService beoordelingService, ProductService productService) {
+    public BeoordelingController(BeoordelingService beoordelingService) {
         this.beoordelingService = beoordelingService;
-        this.productService = productService;
     }
 
     @GetMapping
-    public ResponseEntity<List<Review>> getAlleBeoordelingen() {
+    public ResponseEntity<List<ReviewDTO>> getAlleBeoordelingen() {
         return new ResponseEntity<>(beoordelingService.getAlleBeoordelingen(), HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Review> getBeoordelingById(@PathVariable Long id) {
-        return beoordelingService.getBeoordelingById(id)
-                .map(beoordeling -> new ResponseEntity<>(beoordeling, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    public ResponseEntity<ReviewDTO> getBeoordelingById(@PathVariable Long id) {
+        ReviewDTO review = beoordelingService.getBeoordelingById(id);
+        return review != null ? ResponseEntity.ok(review) : ResponseEntity.notFound().build();
     }
 
     @PostMapping
-    public ResponseEntity<Review> maakBeoordeling(@RequestBody Review beoordeling) {
-        Review nieuweBeoordeling = beoordelingService.maakBeoordeling(beoordeling);
+    public ResponseEntity<ReviewDTO> maakBeoordeling(@RequestBody ReviewDTO reviewDTO) {
+        ReviewDTO nieuweBeoordeling = beoordelingService.maakBeoordeling(reviewDTO);
         return new ResponseEntity<>(nieuweBeoordeling, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Review> updateBeoordeling(@PathVariable Long id, @RequestBody Review beoordeling) {
+    public ResponseEntity<ReviewDTO> updateBeoordeling(@PathVariable Long id, @RequestBody ReviewDTO reviewDTO) {
         try {
-            Review updatedBeoordeling = beoordelingService.updateBeoordeling(id, beoordeling);
-            return new ResponseEntity<>(updatedBeoordeling, HttpStatus.OK);
+            ReviewDTO updatedBeoordeling = beoordelingService.updateBeoordeling(id, reviewDTO);
+            return ResponseEntity.ok(updatedBeoordeling);
         } catch (RuntimeException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.notFound().build();
         }
     }
 
@@ -64,25 +59,29 @@ public class BeoordelingController {
     public ResponseEntity<Void> verwijderBeoordeling(@PathVariable Long id) {
         try {
             beoordelingService.verwijderBeoordeling(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.notFound().build();
         }
     }
 
     @GetMapping("/product/{productId}")
-    public ResponseEntity<List<Review>> getBeoordelingenVoorProduct(@PathVariable Long productId) {
-        Product product = productService.getProductById(productId)
-                .orElseThrow(() -> new RuntimeException("Product niet gevonden met id: " + productId));
-        List<Review> beoordelingen = beoordelingService.getBeoordelingenVoorProduct(product);
-        return new ResponseEntity<>(beoordelingen, HttpStatus.OK);
+    public ResponseEntity<List<ReviewDTO>> getBeoordelingenVoorProduct(@PathVariable Long productId) {
+        try {
+            List<ReviewDTO> beoordelingen = beoordelingService.getBeoordelingenVoorProduct(productId);
+            return ResponseEntity.ok(beoordelingen);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/gemiddelde-score/product/{productId}")
     public ResponseEntity<Double> getGemiddeldeScoreVoorProduct(@PathVariable Long productId) {
-        Product product = productService.getProductById(productId)
-                .orElseThrow(() -> new RuntimeException("Product niet gevonden met id: " + productId));
-        Double gemiddeldeScore = beoordelingService.getGemiddeldeScoreVoorProduct(product);
-        return new ResponseEntity<>(gemiddeldeScore, HttpStatus.OK);
+        try {
+            Double gemiddeldeScore = beoordelingService.getGemiddeldeScoreVoorProduct(productId);
+            return ResponseEntity.ok(gemiddeldeScore);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

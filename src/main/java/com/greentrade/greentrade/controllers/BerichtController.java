@@ -1,35 +1,23 @@
 package com.greentrade.greentrade.controllers;
 
-import java.util.List;
-
+import com.greentrade.greentrade.models.Message;
+import com.greentrade.greentrade.services.BerichtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.greentrade.greentrade.models.Message;
-import com.greentrade.greentrade.models.User;
-import com.greentrade.greentrade.services.BerichtService;
-import com.greentrade.greentrade.services.UserService;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/berichten")
 public class BerichtController {
 
     private final BerichtService berichtService;
-    private final UserService userService;
 
     @Autowired
-    public BerichtController(BerichtService berichtService, UserService userService) {
+    public BerichtController(BerichtService berichtService) {
         this.berichtService = berichtService;
-        this.userService = userService;
     }
 
     @GetMapping
@@ -72,25 +60,31 @@ public class BerichtController {
 
     @GetMapping("/ontvangen/{gebruikerId}")
     public ResponseEntity<List<Message>> getOntvangenBerichtenVoorGebruiker(@PathVariable Long gebruikerId) {
-        User gebruiker = userService.getUserById(gebruikerId)
-                .orElseThrow(() -> new RuntimeException("Gebruiker niet gevonden met id: " + gebruikerId));
-        List<Message> ontvangenBerichten = berichtService.getOntvangenBerichtenVoorGebruiker(gebruiker);
-        return new ResponseEntity<>(ontvangenBerichten, HttpStatus.OK);
+        try {
+            List<Message> ontvangenBerichten = berichtService.getOntvangenBerichtenVoorGebruiker(gebruikerId);
+            return ResponseEntity.ok(ontvangenBerichten);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/verzonden/{gebruikerId}")
     public ResponseEntity<List<Message>> getVerzondenBerichtenVanGebruiker(@PathVariable Long gebruikerId) {
-        User gebruiker = userService.getUserById(gebruikerId)
-                .orElseThrow(() -> new RuntimeException("Gebruiker niet gevonden met id: " + gebruikerId));
-        List<Message> verzondenBerichten = berichtService.getVerzondenBerichtenVanGebruiker(gebruiker);
-        return new ResponseEntity<>(verzondenBerichten, HttpStatus.OK);
+        try {
+            List<Message> verzondenBerichten = berichtService.getVerzondenBerichtenVanGebruiker(gebruikerId);
+            return ResponseEntity.ok(verzondenBerichten);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/ongelezen/{gebruikerId}")
     public ResponseEntity<List<Message>> getOngelezenBerichtenVoorGebruiker(@PathVariable Long gebruikerId) {
-        User gebruiker = userService.getUserById(gebruikerId)
-                .orElseThrow(() -> new RuntimeException("Gebruiker niet gevonden met id: " + gebruikerId));
-        List<Message> ongelezenBerichten = berichtService.getOngelezenBerichtenVoorGebruiker(gebruiker);
-        return new ResponseEntity<>(ongelezenBerichten, HttpStatus.OK);
+        try {
+            List<Message> ongelezenBerichten = berichtService.getOngelezenBerichtenVoorGebruiker(gebruikerId);
+            return ResponseEntity.ok(ongelezenBerichten);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

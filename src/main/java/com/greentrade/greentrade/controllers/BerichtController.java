@@ -1,16 +1,29 @@
 package com.greentrade.greentrade.controllers;
 
-import com.greentrade.greentrade.models.Message;
-import com.greentrade.greentrade.services.BerichtService;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.greentrade.greentrade.dto.MessageDTO;
+import com.greentrade.greentrade.services.BerichtService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/berichten")
+@Tag(name = "Berichten", description = "API endpoints voor het beheren van berichten tussen gebruikers")
 public class BerichtController {
 
     private final BerichtService berichtService;
@@ -20,69 +33,77 @@ public class BerichtController {
         this.berichtService = berichtService;
     }
 
+    @Operation(summary = "Haal alle berichten op")
     @GetMapping
-    public ResponseEntity<List<Message>> getAlleBerichten() {
-        return new ResponseEntity<>(berichtService.getAlleBerichten(), HttpStatus.OK);
+    public ResponseEntity<List<MessageDTO>> getAlleBerichten() {
+        return ResponseEntity.ok(berichtService.getAlleBerichten());
     }
 
+    @Operation(summary = "Haal een specifiek bericht op")
     @GetMapping("/{id}")
-    public ResponseEntity<Message> getBerichtById(@PathVariable Long id) {
+    public ResponseEntity<MessageDTO> getBerichtById(@PathVariable Long id) {
         return berichtService.getBerichtById(id)
-                .map(bericht -> new ResponseEntity<>(bericht, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Verstuur een nieuw bericht")
     @PostMapping
-    public ResponseEntity<Message> verstuurBericht(@RequestBody Message bericht) {
-        Message nieuwBericht = berichtService.verstuurBericht(bericht);
+    public ResponseEntity<MessageDTO> verstuurBericht(@Valid @RequestBody MessageDTO bericht) {
+        MessageDTO nieuwBericht = berichtService.verstuurBericht(bericht);
         return new ResponseEntity<>(nieuwBericht, HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Markeer een bericht als gelezen")
     @PutMapping("/{id}/markeer-gelezen")
-    public ResponseEntity<Message> markeerAlsGelezen(@PathVariable Long id) {
+    public ResponseEntity<MessageDTO> markeerAlsGelezen(@PathVariable Long id) {
         try {
-            Message gelezenBericht = berichtService.markeerAlsGelezen(id);
-            return new ResponseEntity<>(gelezenBericht, HttpStatus.OK);
+            MessageDTO gelezenBericht = berichtService.markeerAlsGelezen(id);
+            return ResponseEntity.ok(gelezenBericht);
         } catch (RuntimeException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.notFound().build();
         }
     }
 
+    @Operation(summary = "Verwijder een bericht")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> verwijderBericht(@PathVariable Long id) {
         try {
             berichtService.verwijderBericht(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.notFound().build();
         }
     }
 
+    @Operation(summary = "Haal ontvangen berichten op voor een gebruiker")
     @GetMapping("/ontvangen/{gebruikerId}")
-    public ResponseEntity<List<Message>> getOntvangenBerichtenVoorGebruiker(@PathVariable Long gebruikerId) {
+    public ResponseEntity<List<MessageDTO>> getOntvangenBerichtenVoorGebruiker(@PathVariable Long gebruikerId) {
         try {
-            List<Message> ontvangenBerichten = berichtService.getOntvangenBerichtenVoorGebruiker(gebruikerId);
-            return ResponseEntity.ok(ontvangenBerichten);
+            List<MessageDTO> berichten = berichtService.getOntvangenBerichtenVoorGebruiker(gebruikerId);
+            return ResponseEntity.ok(berichten);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
+    @Operation(summary = "Haal verzonden berichten op van een gebruiker")
     @GetMapping("/verzonden/{gebruikerId}")
-    public ResponseEntity<List<Message>> getVerzondenBerichtenVanGebruiker(@PathVariable Long gebruikerId) {
+    public ResponseEntity<List<MessageDTO>> getVerzondenBerichtenVanGebruiker(@PathVariable Long gebruikerId) {
         try {
-            List<Message> verzondenBerichten = berichtService.getVerzondenBerichtenVanGebruiker(gebruikerId);
-            return ResponseEntity.ok(verzondenBerichten);
+            List<MessageDTO> berichten = berichtService.getVerzondenBerichtenVanGebruiker(gebruikerId);
+            return ResponseEntity.ok(berichten);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
+    @Operation(summary = "Haal ongelezen berichten op voor een gebruiker")
     @GetMapping("/ongelezen/{gebruikerId}")
-    public ResponseEntity<List<Message>> getOngelezenBerichtenVoorGebruiker(@PathVariable Long gebruikerId) {
+    public ResponseEntity<List<MessageDTO>> getOngelezenBerichtenVoorGebruiker(@PathVariable Long gebruikerId) {
         try {
-            List<Message> ongelezenBerichten = berichtService.getOngelezenBerichtenVoorGebruiker(gebruikerId);
-            return ResponseEntity.ok(ongelezenBerichten);
+            List<MessageDTO> berichten = berichtService.getOngelezenBerichtenVoorGebruiker(gebruikerId);
+            return ResponseEntity.ok(berichten);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

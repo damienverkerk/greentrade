@@ -4,8 +4,10 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,9 +18,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.greentrade.greentrade.config.FileValidationConfig;
 import com.greentrade.greentrade.dto.CertificateDTO;
 import com.greentrade.greentrade.services.CertificateService;
+import com.greentrade.greentrade.services.FileStorageService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,10 +40,16 @@ import jakarta.validation.Valid;
 public class CertificateController {
 
     private final CertificateService certificateService;
+    private final FileStorageService fileStorageService;
+    private final FileValidationConfig fileValidationConfig;
 
     @Autowired
-    public CertificateController(CertificateService certificateService) {
+    public CertificateController(CertificateService certificateService, 
+                               FileStorageService fileStorageService,
+                               FileValidationConfig fileValidationConfig) {
         this.certificateService = certificateService;
+        this.fileStorageService = fileStorageService;
+        this.fileValidationConfig = fileValidationConfig;
     }
 
     @Operation(
@@ -54,7 +65,8 @@ public class CertificateController {
     })
     @GetMapping
     public ResponseEntity<List<CertificateDTO>> getAlleCertificaten() {
-        return ResponseEntity.ok(certificateService.getAlleCertificaten());
+        List<CertificateDTO> certificaten = certificateService.getAlleCertificaten();
+        return ResponseEntity.ok(certificaten);
     }
 
     @Operation(
@@ -87,7 +99,7 @@ public class CertificateController {
             @Valid @RequestBody CertificateDTO certificateDTO) {
         try {
             CertificateDTO nieuwCertificaat = certificateService.maakCertificaat(certificateDTO);
-            return new ResponseEntity<>(nieuwCertificaat, HttpStatus.CREATED);
+            return ResponseEntity.ok(nieuwCertificaat);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -169,5 +181,80 @@ public class CertificateController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate datum) {
         List<CertificateDTO> verlopenCertificaten = certificateService.getVerlopenCertificaten(datum);
         return ResponseEntity.ok(verlopenCertificaten);
+    }
+
+    @Operation(
+        summary = "Upload een certificaat bestand",
+        description = "Upload een PDF of afbeeldingsbestand voor een certificaat. " +
+                     "Toegestane bestandstypen: PDF, JPG, PNG."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Bestand succesvol geüpload"),
+        @ApiResponse(responseCode = "400", description = "Ongeldig bestand of bestandsformaat"),
+        @ApiResponse(responseCode = "404", description = "Certificaat niet gevonden"),
+        @ApiResponse(responseCode = "413", description = "Bestand te groot")
+    })
+    @PostMapping("/{id}/bestand")
+    public ResponseEntity<?> uploadCertificaatBestand(
+            @Parameter(description = "ID van het certificaat", required = true)
+            @PathVariable Long id,
+            @Parameter(description = "Bestand om te uploaden", required = true)
+            @RequestParam("bestand") MultipartFile bestand) {
+
+        // Controleer bestandsgrootte
+        if (bestand.getSize() > fileValidationConfig.getMaxFileSize()) {
+            return ResponseEntity
+                .badRequest()
+                .body("Bestand is te groot. Maximum grootte is " + 
+                      (fileValidationConfig.getMaxFileSize() / (1024 * 1024)) + "MB");
+        }
+
+        // Controleer bestandstype
+        if (!fileStorageService.validateFileType(bestand, 
+                fileValidationConfig.getAllowedExtensions().toArray(String[]::new))) {
+            return ResponseEntity
+                .badRequest()
+                .body("Ongeldig bestandsformaat. Toegestane formaten zijn: " + 
+                      String.join(", ", fileValidationConfig.getAllowedExtensions()));
+        }
+
+        try {
+            String bestandsNaam = fileStorageService.storeFile(bestand);
+            CertificateDTO updatedCertificate = certificateService.updateCertificaatBestand(id, bestandsNaam);
+            return ResponseEntity.ok(updatedCertificate);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @Operation(
+        summary = "Download een certificaat bestand",
+        description = "Download het bestand dat bij een certificaat hoort"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Bestand succesvol gedownload"),
+        @ApiResponse(responseCode = "404", description = "Bestand niet gevonden")
+    })
+    @GetMapping("/{id}/bestand")
+    public ResponseEntity<Resource> downloadCertificaatBestand(
+            @Parameter(description = "ID van het certificaat", required = true)
+            @PathVariable Long id) {
+        try {
+            CertificateDTO certificate = certificateService.getCertificaatById(id);
+            if (certificate == null || certificate.getBestandsPad() == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Resource resource = fileStorageService.loadFileAsResource(certificate.getBestandsPad());
+            String contentType = "application/octet-stream";
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, 
+                           "attachment; filename=\"" + resource.getFilename() + "\"")
+                    .body(resource);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

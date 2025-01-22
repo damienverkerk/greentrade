@@ -1,23 +1,23 @@
 package com.greentrade.greentrade.models;
 
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
 
+@Data
+@Builder
 @Entity
 @Table(name = "users")
-public class User {
+@NoArgsConstructor
+@AllArgsConstructor
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,99 +39,49 @@ public class User {
     private Certificate certificate;
 
     @OneToMany(mappedBy = "verkoper", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Product> producten = new ArrayList<>();
 
     @OneToMany(mappedBy = "afzender", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Message> verzondenBerichten = new ArrayList<>();
 
     @OneToMany(mappedBy = "ontvanger", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Message> ontvangenBerichten = new ArrayList<>();
 
-    // Constructors
-    public User() {}
-
-    public User(String naam, String email, String wachtwoord, Role role, boolean verificatieStatus) {
-        this.naam = naam;
-        this.email = email;
-        this.wachtwoord = wachtwoord;
-        this.role = role;
-        this.verificatieStatus = verificatieStatus;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(role.name()));
     }
 
-    // Getters en Setters
-    public Long getId() {
-        return id;
-    }
-
-    public String getNaam() {
-        return naam;
-    }
-
-    public void setNaam(String naam) {
-        this.naam = naam;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getWachtwoord() {
+    @Override
+    public String getPassword() {
         return wachtwoord;
     }
 
-    public void setWachtwoord(String wachtwoord) {
-        this.wachtwoord = wachtwoord;
+    @Override
+    public String getUsername() {
+        return email;
     }
 
-    public Role getRole() {
-        return role;
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
     }
 
-    public void setRole(Role role) {
-        this.role = role;
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
     }
 
-    public boolean isVerificatieStatus() {
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
         return verificatieStatus;
-    }
-
-    public void setVerificatieStatus(boolean verificatieStatus) {
-        this.verificatieStatus = verificatieStatus;
-    }
-
-    public Certificate getCertificate() {
-        return certificate;
-    }
-
-    public void setCertificate(Certificate certificate) {
-        this.certificate = certificate;
-    }
-
-    public List<Product> getProducten() {
-        return producten;
-    }
-
-    public void setProducten(List<Product> producten) {
-        this.producten = producten;
-    }
-
-    public List<Message> getVerzondenBerichten() {
-        return verzondenBerichten;
-    }
-
-    public void setVerzondenBerichten(List<Message> verzondenBerichten) {
-        this.verzondenBerichten = verzondenBerichten;
-    }
-
-    public List<Message> getOntvangenBerichten() {
-        return ontvangenBerichten;
-    }
-
-    public void setOntvangenBerichten(List<Message> ontvangenBerichten) {
-        this.ontvangenBerichten = ontvangenBerichten;
     }
 }

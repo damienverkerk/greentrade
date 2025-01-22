@@ -1,5 +1,3 @@
-// Path: src/main/java/com/greentrade/greentrade/dto/ProductVerificationDTO.java
-
 package com.greentrade.greentrade.dto;
 
 import java.time.LocalDateTime;

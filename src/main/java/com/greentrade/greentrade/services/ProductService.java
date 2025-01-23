@@ -1,15 +1,19 @@
 package com.greentrade.greentrade.services;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.greentrade.greentrade.dto.ProductDTO;
+import com.greentrade.greentrade.exception.product.InvalidProductDataException;
+import com.greentrade.greentrade.exception.product.ProductNotFoundException;
+import com.greentrade.greentrade.exception.security.UserNotFoundException;
 import com.greentrade.greentrade.models.Product;
 import com.greentrade.greentrade.models.User;
 import com.greentrade.greentrade.repositories.ProductRepository;
 import com.greentrade.greentrade.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -32,53 +36,78 @@ public class ProductService {
     public ProductDTO getProductById(Long id) {
         return productRepository.findById(id)
                 .map(this::convertToDTO)
-                .orElse(null);
+                .orElseThrow(() -> new ProductNotFoundException(id));
     }
 
     public List<ProductDTO> getProductsByVerkoper(Long verkoperId) {
         User verkoper = userRepository.findById(verkoperId)
-                .orElseThrow(() -> new RuntimeException("Verkoper niet gevonden met id: " + verkoperId));
+                .orElseThrow(() -> new UserNotFoundException(verkoperId));
         return productRepository.findByVerkoper(verkoper).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     public List<ProductDTO> searchProductsByName(String naam) {
+        if (naam == null || naam.trim().isEmpty()) {
+            throw new InvalidProductDataException("naam", "Zoekopdracht mag niet leeg zijn");
+        }
         return productRepository.findByNaamContainingIgnoreCase(naam).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     public List<ProductDTO> getProductsByDuurzaamheidsScore(Integer minimumScore) {
+        if (minimumScore == null || minimumScore < 0 || minimumScore > 100) {
+            throw new InvalidProductDataException("duurzaamheidsScore", 
+                "Score moet tussen 0 en 100 liggen");
+        }
         return productRepository.findByDuurzaamheidsScoreGreaterThanEqual(minimumScore).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     public ProductDTO createProduct(ProductDTO productDTO) {
+        validateProductData(productDTO);
+        
         Product product = convertToEntity(productDTO);
         Product savedProduct = productRepository.save(product);
         return convertToDTO(savedProduct);
     }
 
     public ProductDTO updateProduct(Long id, ProductDTO productDTO) {
+        if (!productRepository.existsById(id)) {
+            throw new ProductNotFoundException(id);
+        }
+
+        validateProductData(productDTO);
+        
         return productRepository.findById(id)
                 .map(product -> {
-                    product.setNaam(productDTO.getNaam());
-                    product.setBeschrijving(productDTO.getBeschrijving());
-                    product.setPrijs(productDTO.getPrijs());
-                    product.setDuurzaamheidsScore(productDTO.getDuurzaamheidsScore());
-                    product.setDuurzaamheidsCertificaat(productDTO.getDuurzaamheidsCertificaat());
+                    updateProductFromDTO(product, productDTO);
                     return convertToDTO(productRepository.save(product));
                 })
-                .orElseThrow(() -> new RuntimeException("Product niet gevonden met id: " + id));
+                .orElseThrow(() -> new ProductNotFoundException(id));
     }
 
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
-            throw new RuntimeException("Product niet gevonden met id: " + id);
+            throw new ProductNotFoundException(id);
         }
         productRepository.deleteById(id);
+    }
+
+    private void validateProductData(ProductDTO productDTO) {
+        if (productDTO.getNaam() == null || productDTO.getNaam().trim().isEmpty()) {
+            throw new InvalidProductDataException("naam", "Naam is verplicht");
+        }
+        if (productDTO.getPrijs() == null || productDTO.getPrijs().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new InvalidProductDataException("prijs", "Prijs moet groter zijn dan 0");
+        }
+        if (productDTO.getDuurzaamheidsScore() != null && 
+            (productDTO.getDuurzaamheidsScore() < 0 || productDTO.getDuurzaamheidsScore() > 100)) {
+            throw new InvalidProductDataException("duurzaamheidsScore", 
+                "Duurzaamheidsscore moet tussen 0 en 100 liggen");
+        }
     }
 
     private ProductDTO convertToDTO(Product product) {
@@ -95,6 +124,11 @@ public class ProductService {
 
     private Product convertToEntity(ProductDTO productDTO) {
         Product product = new Product();
+        updateProductFromDTO(product, productDTO);
+        return product;
+    }
+
+    private void updateProductFromDTO(Product product, ProductDTO productDTO) {
         product.setNaam(productDTO.getNaam());
         product.setBeschrijving(productDTO.getBeschrijving());
         product.setPrijs(productDTO.getPrijs());
@@ -103,10 +137,8 @@ public class ProductService {
         
         if (productDTO.getVerkoperId() != null) {
             User verkoper = userRepository.findById(productDTO.getVerkoperId())
-                    .orElseThrow(() -> new RuntimeException("Verkoper niet gevonden met id: " + productDTO.getVerkoperId()));
+                    .orElseThrow(() -> new UserNotFoundException(productDTO.getVerkoperId()));
             product.setVerkoper(verkoper);
         }
-        
-        return product;
     }
 }

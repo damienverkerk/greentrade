@@ -1,20 +1,16 @@
 package com.greentrade.greentrade.services;
 
+import com.greentrade.greentrade.dto.ProductVerificationDTO;
+import com.greentrade.greentrade.models.*;
+import com.greentrade.greentrade.repositories.ProductVerificationRepository;
+import com.greentrade.greentrade.repositories.ProductRepository;
+import com.greentrade.greentrade.repositories.UserRepository;
+import com.greentrade.greentrade.exception.verification.*;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.greentrade.greentrade.dto.ProductVerificationDTO;
-import com.greentrade.greentrade.models.Product;
-import com.greentrade.greentrade.models.ProductVerification;
-import com.greentrade.greentrade.models.User;
-import com.greentrade.greentrade.models.VerificationStatus;
-import com.greentrade.greentrade.repositories.ProductRepository;
-import com.greentrade.greentrade.repositories.ProductVerificationRepository;
-import com.greentrade.greentrade.repositories.UserRepository;
 
 @Service
 public class ProductVerificationService {
@@ -34,14 +30,14 @@ public class ProductVerificationService {
     @Transactional
     public ProductVerificationDTO submitForVerification(Long productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product niet gevonden"));
+                .orElseThrow(() -> new ProductVerificationException("Product niet gevonden met ID: " + productId));
 
         // Check of er al een lopende verificatie is
         verificationRepository.findFirstByProductOrderBySubmissionDateDesc(product)
                 .ifPresent(existingVerification -> {
                     if (existingVerification.getStatus() == VerificationStatus.PENDING 
                         || existingVerification.getStatus() == VerificationStatus.IN_REVIEW) {
-                        throw new RuntimeException("Er is al een lopende verificatie voor dit product");
+                        throw new DuplicateVerificationException(productId);
                     }
                 });
 
@@ -56,15 +52,15 @@ public class ProductVerificationService {
     @Transactional
     public ProductVerificationDTO reviewProduct(Long verificationId, ProductVerificationDTO dto, Long reviewerId) {
         ProductVerification verification = verificationRepository.findById(verificationId)
-                .orElseThrow(() -> new RuntimeException("Verificatie niet gevonden"));
+                .orElseThrow(() -> new VerificationNotFoundException(verificationId));
 
         if (verification.getStatus() != VerificationStatus.PENDING 
             && verification.getStatus() != VerificationStatus.IN_REVIEW) {
-            throw new RuntimeException("Deze verificatie kan niet meer worden beoordeeld");
+            throw new InvalidVerificationStatusException("Deze verificatie kan niet meer worden beoordeeld");
         }
 
         User reviewer = userRepository.findById(reviewerId)
-                .orElseThrow(() -> new RuntimeException("Reviewer niet gevonden"));
+                .orElseThrow(() -> new ProductVerificationException("Reviewer niet gevonden met ID: " + reviewerId));
 
         verification.setStatus(dto.getStatus());
         verification.setReviewerNotes(dto.getReviewerNotes());
@@ -75,7 +71,7 @@ public class ProductVerificationService {
 
         if (dto.getStatus() == VerificationStatus.APPROVED) {
             if (dto.getSustainabilityScore() == null) {
-                throw new RuntimeException("Duurzaamheidsscore is verplicht bij goedkeuring");
+                throw new ProductVerificationException("Duurzaamheidsscore is verplicht bij goedkeuring");
             }
             verification.getProduct().setDuurzaamheidsScore(dto.getSustainabilityScore());
             productRepository.save(verification.getProduct());

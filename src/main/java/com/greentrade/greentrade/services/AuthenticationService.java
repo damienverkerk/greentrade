@@ -1,6 +1,8 @@
 package com.greentrade.greentrade.services;
 
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -8,6 +10,9 @@ import org.springframework.stereotype.Service;
 import com.greentrade.greentrade.dto.AuthRequest;
 import com.greentrade.greentrade.dto.AuthResponse;
 import com.greentrade.greentrade.dto.RegisterRequest;
+import com.greentrade.greentrade.exception.security.InvalidCredentialsException;
+import com.greentrade.greentrade.exception.security.SecurityException;
+import com.greentrade.greentrade.exception.security.UserNotFoundException;
 import com.greentrade.greentrade.models.Role;
 import com.greentrade.greentrade.models.User;
 import com.greentrade.greentrade.repositories.UserRepository;
@@ -24,16 +29,21 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest request) {
+        // Valideer of email al bestaat
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email is al in gebruik");
+            throw new SecurityException("Email is al in gebruik");
         }
 
+        // Valideer wachtwoord sterkte
+        validatePassword(request.getWachtwoord());
+
+        // Maak nieuwe gebruiker aan
         var user = User.builder()
                 .naam(request.getNaam())
                 .email(request.getEmail())
                 .wachtwoord(passwordEncoder.encode(request.getWachtwoord()))
                 .role(Role.valueOf(request.getRole()))
-                .verificatieStatus(true) 
+                .verificatieStatus(true)  // Standaard op true voor nu
                 .build();
         
         var savedUser = userRepository.save(user);
@@ -46,8 +56,7 @@ public class AuthenticationService {
 
     public AuthResponse authenticate(AuthRequest request) {
         try {
-            System.out.println("Authenticating user: " + request.getEmail());
-            
+            // Authenticatie poging
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
@@ -55,22 +64,36 @@ public class AuthenticationService {
                     )
             );
             
-            System.out.println("Authentication successful");
-            
+            // Haal gebruiker op en genereer token
             var user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new RuntimeException("Gebruiker niet gevonden"));
+                    .orElseThrow(() -> new UserNotFoundException(request.getEmail()));
             
-            System.out.println("User found, generating token");
             var jwtToken = jwtService.generateToken(user);
-            System.out.println("Token generated");
             
             return AuthResponse.builder()
                     .token(jwtToken)
                     .build();
-        } catch (Exception e) {
-            System.out.println("Authentication error: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
+                    
+        } catch (DisabledException e) {
+            throw new SecurityException("Account is gedeactiveerd");
+        } catch (BadCredentialsException e) {
+            throw new InvalidCredentialsException();
+        }
+    }
+
+    private void validatePassword(String password) {
+        if (password == null || password.length() < 8) {
+            throw new SecurityException("Wachtwoord moet minimaal 8 karakters lang zijn");
+        }
+        
+        boolean hasLetter = password.matches(".*[a-zA-Z].*");
+        boolean hasDigit = password.matches(".*\\d.*");
+        boolean hasSpecial = password.matches(".*[!@#$%^&*(),.?\":{}|<>].*");
+        
+        if (!hasLetter || !hasDigit || !hasSpecial) {
+            throw new SecurityException(
+                "Wachtwoord moet minimaal één letter, één cijfer en één speciaal karakter bevatten"
+            );
         }
     }
 }

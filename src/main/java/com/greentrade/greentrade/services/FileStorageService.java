@@ -19,6 +19,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.greentrade.greentrade.config.FileStorageConfig;
+import com.greentrade.greentrade.exception.file.FileStorageException;
+import com.greentrade.greentrade.exception.file.InvalidFileException;
 
 @Service
 public class FileStorageService {
@@ -33,17 +35,17 @@ public class FileStorageService {
         try {
             Files.createDirectories(this.fileStorageLocation);
         } catch (IOException e) {
-            throw new RuntimeException("Kon de upload directory niet aanmaken.", e);
+            throw new FileStorageException("Upload directory kon niet worden aangemaakt", e);
         } catch (SecurityException e) {
-            throw new RuntimeException("Geen toegangsrechten voor het aanmaken van de upload directory.", e);
+            throw new FileStorageException("Geen toegangsrechten voor het aanmaken van de upload directory", e);
         } catch (InvalidPathException e) {
-            throw new RuntimeException("Ongeldig pad voor de upload directory.", e);
+            throw new FileStorageException("Ongeldig pad voor de upload directory", e);
         }
     }
 
     public String storeFile(@NonNull MultipartFile file) {
         if (file.isEmpty()) {
-            throw new RuntimeException("Kan geen leeg bestand opslaan");
+            throw new InvalidFileException("Kan geen leeg bestand opslaan");
         }
 
         String fileName = StringUtils.cleanPath(
@@ -59,7 +61,7 @@ public class FileStorageService {
             String uniqueFileName = UUID.randomUUID().toString() + fileExtension;
             
             if (uniqueFileName.contains("..")) {
-                throw new RuntimeException("Sorry! Bestandsnaam bevat een ongeldig pad " + fileName);
+                throw new InvalidFileException("Bestandsnaam bevat ongeldige karakters: " + fileName);
             }
 
             Path targetLocation = this.fileStorageLocation.resolve(uniqueFileName);
@@ -67,9 +69,9 @@ public class FileStorageService {
 
             return uniqueFileName;
         } catch (IOException e) {
-            throw new RuntimeException("Kon bestand " + fileName + " niet opslaan.", e);
+            throw new FileStorageException("Kon bestand " + fileName + " niet opslaan", e);
         } catch (InvalidPathException e) {
-            throw new RuntimeException("Ongeldig pad voor bestand " + fileName, e);
+            throw new FileStorageException("Ongeldig pad voor bestand " + fileName, e);
         }
     }
 
@@ -82,10 +84,10 @@ public class FileStorageService {
             if (resource.exists()) {
                 return resource;
             } else {
-                throw new RuntimeException("Bestand niet gevonden: " + fileName);
+                throw new FileStorageException("Bestand niet gevonden: " + fileName);
             }
         } catch (MalformedURLException e) {
-            throw new RuntimeException("Ongeldig bestandspad: " + fileName, e);
+            throw new FileStorageException("Ongeldig bestandspad: " + fileName, e);
         }
     }
 
@@ -95,23 +97,29 @@ public class FileStorageService {
             Path filePath = this.fileStorageLocation.resolve(cleanFileName).normalize();
             
             if (!Files.deleteIfExists(filePath)) {
-                throw new RuntimeException("Bestand bestaat niet: " + fileName);
+                throw new FileStorageException("Bestand bestaat niet: " + fileName);
             }
         } catch (IOException e) {
-            throw new RuntimeException("Kon bestand " + fileName + " niet verwijderen.", e);
+            throw new FileStorageException("Kon bestand " + fileName + " niet verwijderen", e);
         }
     }
     
     public boolean validateFileType(@NonNull MultipartFile file, @NonNull String... allowedExtensions) {
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null) {
-            return false;
+            throw new InvalidFileException("Geen bestandsnaam opgegeven");
         }
         
         String cleanFileName = StringUtils.cleanPath(originalFilename).toLowerCase();
-        return java.util.Arrays.stream(allowedExtensions)
+        boolean isValid = java.util.Arrays.stream(allowedExtensions)
                 .filter(Objects::nonNull)
                 .map(String::toLowerCase)
                 .anyMatch(ext -> cleanFileName.endsWith("." + ext));
+
+        if (!isValid) {
+            throw InvalidFileException.invalidType(String.join(", ", allowedExtensions));
+        }
+        
+        return true;
     }
 }

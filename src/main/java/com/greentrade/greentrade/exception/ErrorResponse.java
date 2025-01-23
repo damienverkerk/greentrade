@@ -1,5 +1,3 @@
-// Path: src/main/java/com/greentrade/greentrade/exception/ErrorResponse.java
-
 package com.greentrade.greentrade.exception;
 
 import java.time.LocalDateTime;

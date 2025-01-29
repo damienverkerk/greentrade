@@ -2,8 +2,10 @@ package com.greentrade.greentrade.services;
 
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,6 +51,7 @@ class AuthenticationServiceTest {
     private User testUser;
     
     @BeforeEach
+    @SuppressWarnings("unused")
     void setUp() {
         validRegisterRequest = RegisterRequest.builder()
             .naam("Test User")
@@ -83,6 +86,7 @@ class AuthenticationServiceTest {
 
         assertNotNull(result);
         assertNotNull(result.getToken());
+        assertEquals("test.jwt.token", result.getToken());
         verify(userRepository).save(any(User.class));
     }
 
@@ -90,27 +94,30 @@ class AuthenticationServiceTest {
     void registrerenMetBestaandeEmailGeeftFout() {
         when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
-        assertThrows(SecurityException.class, () -> 
+        SecurityException thrown = assertThrows(SecurityException.class, () -> 
             authenticationService.register(validRegisterRequest)
         );
+        assertEquals("Email is al in gebruik", thrown.getMessage());
     }
 
     @Test
     void registrerenMetZwakWachtwoordGeeftFout() {
         validRegisterRequest.setWachtwoord("zwak");
 
-        assertThrows(SecurityException.class, () -> 
+        SecurityException thrown = assertThrows(SecurityException.class, () -> 
             authenticationService.register(validRegisterRequest)
         );
+        assertTrue(thrown.getMessage().contains("Wachtwoord moet minimaal 8 karakters lang zijn"));
     }
 
     @Test
     void registrerenMetLeegWachtwoordGeeftFout() {
         validRegisterRequest.setWachtwoord("");
 
-        assertThrows(SecurityException.class, () -> 
+        SecurityException thrown = assertThrows(SecurityException.class, () -> 
             authenticationService.register(validRegisterRequest)
         );
+        assertTrue(thrown.getMessage().contains("Wachtwoord moet minimaal 8 karakters lang zijn"));
     }
 
     @Test
@@ -122,6 +129,7 @@ class AuthenticationServiceTest {
 
         assertNotNull(result);
         assertNotNull(result.getToken());
+        assertEquals("test.jwt.token", result.getToken());
         verify(authenticationManager).authenticate(
             any(UsernamePasswordAuthenticationToken.class)
         );
@@ -132,8 +140,9 @@ class AuthenticationServiceTest {
         when(authenticationManager.authenticate(any()))
             .thenThrow(new SecurityException("Ongeldige inloggegevens"));
 
-        assertThrows(SecurityException.class, () -> 
+        SecurityException thrown = assertThrows(SecurityException.class, () -> 
             authenticationService.authenticate(validLoginRequest)
         );
+        assertEquals("Ongeldige inloggegevens", thrown.getMessage());
     }
 }

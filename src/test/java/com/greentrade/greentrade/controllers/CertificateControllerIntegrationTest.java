@@ -50,6 +50,7 @@ class CertificateControllerIntegrationTest {
     private CertificateDTO testCertificaat;
 
     @BeforeEach
+    @SuppressWarnings("unused")
     void setUp() {
         testCertificaat = new CertificateDTO(1L, "ISO14001", "Bureau Veritas", 
             LocalDate.now(), LocalDate.now().plusYears(1), 

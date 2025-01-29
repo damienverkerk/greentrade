@@ -51,6 +51,7 @@ class ProductVerificationServiceTest {
     private ProductVerificationDTO testVerificationDTO;
 
     @BeforeEach
+    @SuppressWarnings("unused")
     void setUp() {
         testUser = User.builder()
             .id(1L)
@@ -86,6 +87,7 @@ class ProductVerificationServiceTest {
 
         assertNotNull(result);
         assertEquals(VerificationStatus.PENDING, result.getStatus());
+        assertEquals(testProduct.getId(), result.getProductId());
         verify(verificationRepository).save(any(ProductVerification.class));
     }
 
@@ -95,9 +97,11 @@ class ProductVerificationServiceTest {
         when(verificationRepository.findFirstByProductOrderBySubmissionDateDesc(testProduct))
             .thenReturn(Optional.of(testVerification));
 
-        assertThrows(DuplicateVerificationException.class, () -> 
-            verificationService.submitForVerification(1L)
+        DuplicateVerificationException thrown = assertThrows(
+            DuplicateVerificationException.class, 
+            () -> verificationService.submitForVerification(1L)
         );
+        assertEquals("Er is al een lopende verificatie voor product met ID: 1", thrown.getMessage());
     }
 
     @Test
@@ -112,6 +116,7 @@ class ProductVerificationServiceTest {
         assertNotNull(result);
         assertEquals(VerificationStatus.APPROVED, result.getStatus());
         assertEquals(85, result.getSustainabilityScore());
+        verify(verificationRepository).save(any(ProductVerification.class));
     }
 
     @Test
@@ -119,9 +124,11 @@ class ProductVerificationServiceTest {
         testVerification.setStatus(VerificationStatus.APPROVED);
         when(verificationRepository.findById(1L)).thenReturn(Optional.of(testVerification));
 
-        assertThrows(InvalidVerificationStatusException.class, () ->
-            verificationService.reviewProduct(1L, testVerificationDTO, 1L)
+        InvalidVerificationStatusException thrown = assertThrows(
+            InvalidVerificationStatusException.class,
+            () -> verificationService.reviewProduct(1L, testVerificationDTO, 1L)
         );
+        assertEquals("Deze verificatie kan niet meer worden beoordeeld", thrown.getMessage());
     }
 
     @Test
@@ -131,9 +138,11 @@ class ProductVerificationServiceTest {
         
         testVerificationDTO.setSustainabilityScore(null);
 
-        assertThrows(ProductVerificationException.class, () ->
-            verificationService.reviewProduct(1L, testVerificationDTO, 1L)
+        ProductVerificationException thrown = assertThrows(
+            ProductVerificationException.class,
+            () -> verificationService.reviewProduct(1L, testVerificationDTO, 1L)
         );
+        assertEquals("Duurzaamheidsscore is verplicht bij goedkeuring", thrown.getMessage());
     }
 
     @Test
@@ -146,5 +155,6 @@ class ProductVerificationServiceTest {
         assertNotNull(results);
         assertEquals(1, results.size());
         assertEquals(VerificationStatus.PENDING, results.get(0).getStatus());
+        assertEquals(testProduct.getId(), results.get(0).getProductId());
     }
 }

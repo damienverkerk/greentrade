@@ -42,6 +42,7 @@ class BerichtControllerIntegrationTest {
     private MessageDTO testBericht;
 
     @BeforeEach
+    @SuppressWarnings("unused")
     void setUp() {
         testBericht = new MessageDTO(
             1L,

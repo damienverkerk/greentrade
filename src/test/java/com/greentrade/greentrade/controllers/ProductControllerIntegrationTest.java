@@ -42,6 +42,7 @@ class ProductControllerIntegrationTest {
     private ProductDTO testProduct;
 
     @BeforeEach
+    @SuppressWarnings("unused")
     void setUp() {
         testProduct = new ProductDTO(
             1L, 

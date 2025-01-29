@@ -42,6 +42,7 @@ class TransactionControllerIntegrationTest {
     private TransactionDTO testTransactie;
 
     @BeforeEach
+    @SuppressWarnings("unused")
     void setUp() {
         testTransactie = new TransactionDTO(
             1L,

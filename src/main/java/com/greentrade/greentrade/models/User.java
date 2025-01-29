@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-
 @Data
 @Builder
 @Entity
@@ -35,7 +34,8 @@ public class User implements UserDetails {
 
     private boolean verificatieStatus;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToOne
+    @JoinColumn(name = "certificate_id")
     private Certificate certificate;
 
     @OneToMany(mappedBy = "verkoper", cascade = CascadeType.ALL)

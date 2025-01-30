@@ -13,16 +13,21 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.greentrade.greentrade.dto.AuthRequest;
 import com.greentrade.greentrade.dto.RegisterRequest;
+import com.greentrade.greentrade.exception.security.InvalidCredentialsException;
 import com.greentrade.greentrade.exception.security.SecurityException;
+import com.greentrade.greentrade.exception.security.UserNotFoundException;
 import com.greentrade.greentrade.models.Role;
 import com.greentrade.greentrade.models.User;
 import com.greentrade.greentrade.repositories.UserRepository;
@@ -98,6 +103,7 @@ class AuthenticationServiceTest {
             authenticationService.register(validRegisterRequest)
         );
         assertEquals("Email is al in gebruik", thrown.getMessage());
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
@@ -108,6 +114,7 @@ class AuthenticationServiceTest {
             authenticationService.register(validRegisterRequest)
         );
         assertTrue(thrown.getMessage().contains("Wachtwoord moet minimaal 8 karakters lang zijn"));
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
@@ -118,31 +125,92 @@ class AuthenticationServiceTest {
             authenticationService.register(validRegisterRequest)
         );
         assertTrue(thrown.getMessage().contains("Wachtwoord moet minimaal 8 karakters lang zijn"));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void registrerenZonderLetterInWachtwoordGeeftFout() {
+        validRegisterRequest.setWachtwoord("12345678!");
+
+        SecurityException thrown = assertThrows(SecurityException.class, () -> 
+            authenticationService.register(validRegisterRequest)
+        );
+        assertEquals("Wachtwoord moet minimaal één letter, één cijfer en één speciaal karakter bevatten", 
+            thrown.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void registrerenZonderCijferInWachtwoordGeeftFout() {
+        validRegisterRequest.setWachtwoord("Password!");
+
+        SecurityException thrown = assertThrows(SecurityException.class, () -> 
+            authenticationService.register(validRegisterRequest)
+        );
+        assertEquals("Wachtwoord moet minimaal één letter, één cijfer en één speciaal karakter bevatten", 
+            thrown.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void registrerenZonderSpeciaalTekenInWachtwoordGeeftFout() {
+        validRegisterRequest.setWachtwoord("Password123");
+
+        SecurityException thrown = assertThrows(SecurityException.class, () -> 
+            authenticationService.register(validRegisterRequest)
+        );
+        assertEquals("Wachtwoord moet minimaal één letter, één cijfer en één speciaal karakter bevatten", 
+            thrown.getMessage());
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
     void loginMetGeldigeGegevensGelukt() {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
         when(jwtService.generateToken(any(User.class))).thenReturn("test.jwt.token");
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+            .thenReturn(new UsernamePasswordAuthenticationToken(testUser, null));
 
         var result = authenticationService.authenticate(validLoginRequest);
 
         assertNotNull(result);
         assertNotNull(result.getToken());
         assertEquals("test.jwt.token", result.getToken());
-        verify(authenticationManager).authenticate(
-            any(UsernamePasswordAuthenticationToken.class)
-        );
+        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
     }
 
     @Test
     void loginMetOngeldigeGegevensGeeftFout() {
         when(authenticationManager.authenticate(any()))
-            .thenThrow(new SecurityException("Ongeldige inloggegevens"));
+            .thenThrow(new BadCredentialsException("Invalid credentials"));
+
+        InvalidCredentialsException thrown = assertThrows(InvalidCredentialsException.class, () -> 
+            authenticationService.authenticate(validLoginRequest)
+        );
+        assertNotNull(thrown);
+    }
+
+    @Test
+    void loginMetGedeactiveerdAccountGeeftFout() {
+        when(authenticationManager.authenticate(any()))
+            .thenThrow(new DisabledException("Account is disabled"));
 
         SecurityException thrown = assertThrows(SecurityException.class, () -> 
             authenticationService.authenticate(validLoginRequest)
         );
-        assertEquals("Ongeldige inloggegevens", thrown.getMessage());
+        assertEquals("Account is gedeactiveerd", thrown.getMessage());
+    }
+
+    @Test
+    void loginMetOnbekendeGebruikerGeeftFout() {
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+            .thenReturn(new UsernamePasswordAuthenticationToken(testUser, null));
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+
+        UserNotFoundException thrown = assertThrows(UserNotFoundException.class, () -> 
+            authenticationService.authenticate(validLoginRequest)
+        );
+        assertNotNull(thrown);
+        assertEquals("Gebruiker niet gevonden met email: test@example.com", thrown.getMessage());
     }
 }

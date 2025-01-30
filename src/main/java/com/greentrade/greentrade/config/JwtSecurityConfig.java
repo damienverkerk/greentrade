@@ -14,7 +14,11 @@ import com.greentrade.greentrade.security.JwtAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity(
+    prePostEnabled = true, 
+    securedEnabled = true,
+    jsr250Enabled = true
+)
 public class JwtSecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
@@ -35,6 +39,7 @@ public class JwtSecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/verifications/pending").hasRole("ADMIN")  // Expliciet deze URL configureren
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> 

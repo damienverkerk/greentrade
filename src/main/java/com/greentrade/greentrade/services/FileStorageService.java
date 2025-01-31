@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.greentrade.greentrade.config.FileStorageConfig;
+import com.greentrade.greentrade.config.FileValidationConfig;
 import com.greentrade.greentrade.exception.file.FileStorageException;
 import com.greentrade.greentrade.exception.file.InvalidFileException;
 
@@ -26,9 +27,11 @@ import com.greentrade.greentrade.exception.file.InvalidFileException;
 public class FileStorageService {
 
     private final Path fileStorageLocation;
+    private final FileValidationConfig fileValidationConfig;
 
     @Autowired
-    public FileStorageService(FileStorageConfig fileStorageConfig) {
+    public FileStorageService(FileStorageConfig fileStorageConfig, FileValidationConfig fileValidationConfig) {
+        this.fileValidationConfig = fileValidationConfig;
         this.fileStorageLocation = Paths.get(fileStorageConfig.getUploadDir())
                 .toAbsolutePath().normalize();
 
@@ -43,14 +46,32 @@ public class FileStorageService {
         }
     }
 
-    public String storeFile(@NonNull MultipartFile file) {
+    public String storeFile(MultipartFile file) {
+        // Nullcheck voor het file object zelf
+        if (file == null) {
+            throw new InvalidFileException("Bestand mag niet null zijn");
+        }
+    
+        // Check voor null original filename
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) {
+            throw new InvalidFileException("Bestandsnaam mag niet null zijn");
+        }
+    
         if (file.isEmpty()) {
             throw new InvalidFileException("Kan geen leeg bestand opslaan");
         }
-
-        String fileName = StringUtils.cleanPath(
-            Objects.requireNonNull(file.getOriginalFilename(), "Bestandsnaam mag niet null zijn")
-        );
+    
+        String fileName = StringUtils.cleanPath(originalFilename);
+        
+        // Check voor malicious bestandsnamen
+        if (fileName.contains("..")) {
+            throw new InvalidFileException("Bestandsnaam bevat ongeldige karakters: " + fileName);
+        }
+    
+        if (file.getSize() > fileValidationConfig.getMaxFileSize()) {
+            throw InvalidFileException.tooLarge(fileValidationConfig.getMaxFileSize());
+        }
         
         try {
             String fileExtension = "";
@@ -59,22 +80,15 @@ public class FileStorageService {
             }
             
             String uniqueFileName = UUID.randomUUID().toString() + fileExtension;
-            
-            if (uniqueFileName.contains("..")) {
-                throw new InvalidFileException("Bestandsnaam bevat ongeldige karakters: " + fileName);
-            }
-
+    
             Path targetLocation = this.fileStorageLocation.resolve(uniqueFileName);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-
+    
             return uniqueFileName;
         } catch (IOException e) {
             throw new FileStorageException("Kon bestand " + fileName + " niet opslaan", e);
-        } catch (InvalidPathException e) {
-            throw new FileStorageException("Ongeldig pad voor bestand " + fileName, e);
         }
-    }
-
+    }    
     public Resource loadFileAsResource(@NonNull String fileName) {
         try {
             String cleanFileName = StringUtils.cleanPath(Objects.requireNonNull(fileName, "Bestandsnaam mag niet null zijn"));

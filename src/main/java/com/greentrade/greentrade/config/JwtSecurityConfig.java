@@ -39,7 +39,8 @@ public class JwtSecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()
-                .requestMatchers("/api/verifications/pending").hasRole("ADMIN")  // Expliciet deze URL configureren
+                .requestMatchers("/api/verifications/pending").hasRole("ADMIN")
+                .requestMatchers("/api/transacties/koper/**").hasRole("KOPER")
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> 

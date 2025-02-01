@@ -65,7 +65,9 @@ class CertificateControllerIntegrationTest {
             .thenReturn(Arrays.asList("pdf", "jpg", "jpeg", "png"));
         when(fileValidationConfig.getMaxFileSize())
             .thenReturn(10L * 1024 * 1024); // 10MB
-
+        
+        when(certificateService.getCertificaatById(1L))
+            .thenReturn(testCertificaat);
         // Maak testbestand
         MockMultipartFile file = new MockMultipartFile(
             "bestand",          // naam parameter in controller

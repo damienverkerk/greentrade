@@ -1,5 +1,6 @@
 package com.greentrade.greentrade.services;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -64,9 +65,19 @@ public class TransactionService {
     }
 
     public TransactionDTO maakTransactie(TransactionDTO transactionDTO) {
-        Transaction transaction = convertToEntity(transactionDTO);
-        Transaction savedTransaction = transactionRepository.save(transaction);
-        return convertToDTO(savedTransaction);
+        if (transactionDTO.getBedrag() == null || transactionDTO.getBedrag().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Bedrag moet groter zijn dan 0");
+        }
+
+        try {
+            Transaction transaction = convertToEntity(transactionDTO);
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            return convertToDTO(savedTransaction);
+        } catch (IllegalArgumentException e) {
+            throw e;  // Gooi validatie errors door
+        } catch (Exception e) {
+            throw new RuntimeException("Transactie aanmaken mislukt: " + e.getMessage());
+        }
     }
 
     public TransactionDTO updateTransactieStatus(Long id, String nieuweStatus) {

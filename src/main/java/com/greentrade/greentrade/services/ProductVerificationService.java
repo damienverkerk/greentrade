@@ -1,16 +1,25 @@
 package com.greentrade.greentrade.services;
 
-import com.greentrade.greentrade.dto.ProductVerificationDTO;
-import com.greentrade.greentrade.models.*;
-import com.greentrade.greentrade.repositories.ProductVerificationRepository;
-import com.greentrade.greentrade.repositories.ProductRepository;
-import com.greentrade.greentrade.repositories.UserRepository;
-import com.greentrade.greentrade.exception.verification.*;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.greentrade.greentrade.dto.ProductVerificationDTO;
+import com.greentrade.greentrade.exception.product.ProductNotFoundException;
+import com.greentrade.greentrade.exception.verification.DuplicateVerificationException;
+import com.greentrade.greentrade.exception.verification.InvalidVerificationStatusException;
+import com.greentrade.greentrade.exception.verification.ProductVerificationException;
+import com.greentrade.greentrade.exception.verification.VerificationNotFoundException;
+import com.greentrade.greentrade.models.Product;
+import com.greentrade.greentrade.models.ProductVerification;
+import com.greentrade.greentrade.models.User;
+import com.greentrade.greentrade.models.VerificationStatus;
+import com.greentrade.greentrade.repositories.ProductRepository;
+import com.greentrade.greentrade.repositories.ProductVerificationRepository;
+import com.greentrade.greentrade.repositories.UserRepository;
 
 @Service
 public class ProductVerificationService {
@@ -30,7 +39,7 @@ public class ProductVerificationService {
     @Transactional
     public ProductVerificationDTO submitForVerification(Long productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductVerificationException("Product niet gevonden met ID: " + productId));
+                .orElseThrow(() -> new ProductNotFoundException(productId));  // Deze exception
 
         // Check of er al een lopende verificatie is
         verificationRepository.findFirstByProductOrderBySubmissionDateDesc(product)
@@ -49,49 +58,62 @@ public class ProductVerificationService {
         return convertToDTO(verificationRepository.save(verification));
     }
 
-    @Transactional
-    public ProductVerificationDTO reviewProduct(Long verificationId, ProductVerificationDTO dto, Long reviewerId) {
-        ProductVerification verification = verificationRepository.findById(verificationId)
-                .orElseThrow(() -> new VerificationNotFoundException(verificationId));
+@Transactional
+public ProductVerificationDTO reviewProduct(Long verificationId, ProductVerificationDTO dto, Long reviewerId) {
+    // Controleer verificatie
+    ProductVerification verification = verificationRepository.findById(verificationId)
+            .orElseThrow(() -> new VerificationNotFoundException(verificationId));
 
-        if (verification.getStatus() != VerificationStatus.PENDING 
-            && verification.getStatus() != VerificationStatus.IN_REVIEW) {
-            throw new InvalidVerificationStatusException("Deze verificatie kan niet meer worden beoordeeld");
-        }
-
-        User reviewer = userRepository.findById(reviewerId)
-                .orElseThrow(() -> new ProductVerificationException("Reviewer niet gevonden met ID: " + reviewerId));
-
-        verification.setStatus(dto.getStatus());
-        verification.setReviewerNotes(dto.getReviewerNotes());
-        verification.setReviewer(reviewer);
-        verification.setVerificationDate(LocalDateTime.now());
-        verification.setSustainabilityScore(dto.getSustainabilityScore());
-        verification.setRejectionReason(dto.getRejectionReason());
-
-        if (dto.getStatus() == VerificationStatus.APPROVED) {
-            if (dto.getSustainabilityScore() == null) {
-                throw new ProductVerificationException("Duurzaamheidsscore is verplicht bij goedkeuring");
-            }
-            verification.getProduct().setDuurzaamheidsScore(dto.getSustainabilityScore());
-            productRepository.save(verification.getProduct());
-        }
-
-        return convertToDTO(verificationRepository.save(verification));
+    if (verification.getStatus() != VerificationStatus.PENDING 
+        && verification.getStatus() != VerificationStatus.IN_REVIEW) {
+        throw new InvalidVerificationStatusException("Deze verificatie kan niet meer worden beoordeeld");
     }
 
+    // Controleer reviewer
+    User reviewer = userRepository.findById(reviewerId)
+            .orElseThrow(() -> new ProductVerificationException("Reviewer niet gevonden met ID: " + reviewerId));
+
+    // Bij goedkeuring, check score
+    if (dto.getStatus() == VerificationStatus.APPROVED && dto.getSustainabilityScore() == null) {
+        throw new ProductVerificationException("Duurzaamheidsscore is verplicht bij goedkeuring");
+    }
+
+    // Update verificatie
+    verification.setStatus(dto.getStatus());
+    verification.setReviewerNotes(dto.getReviewerNotes());
+    verification.setReviewer(reviewer);
+    verification.setVerificationDate(LocalDateTime.now());
+    verification.setSustainabilityScore(dto.getSustainabilityScore());
+    verification.setRejectionReason(dto.getRejectionReason());
+
+    if (dto.getStatus() == VerificationStatus.APPROVED) {
+        verification.getProduct().setDuurzaamheidsScore(dto.getSustainabilityScore());
+        productRepository.save(verification.getProduct());
+    }
+
+    return convertToDTO(verificationRepository.save(verification));
+}
+
     public List<ProductVerificationDTO> getPendingVerifications() {
-        return verificationRepository.findByStatus(VerificationStatus.PENDING)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        try {
+            return verificationRepository.findByStatus(VerificationStatus.PENDING)
+                    .stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new ProductVerificationException("Ophalen van verificaties mislukt: " + e.getMessage());
+        }
     }
 
     public List<ProductVerificationDTO> getVerificationsByProduct(Long productId) {
-        return verificationRepository.findByProductId(productId)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        try {
+            return verificationRepository.findByProductId(productId)
+                    .stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new ProductVerificationException("Ophalen van product verificaties mislukt: " + e.getMessage());
+        }
     }
 
     private ProductVerificationDTO convertToDTO(ProductVerification verification) {

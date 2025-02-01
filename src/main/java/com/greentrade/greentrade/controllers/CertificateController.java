@@ -199,30 +199,27 @@ public class CertificateController {
     })
     @PostMapping("/{id}/bestand")
     public ResponseEntity<CertificateDTO> uploadCertificaatBestand(
-            @Parameter(description = "ID van het certificaat", required = true)
-            @PathVariable Long id,
-            @Parameter(description = "Bestand om te uploaden", required = true)
-            @RequestParam("bestand") MultipartFile bestand) {
-
+        @PathVariable Long id,
+        @RequestParam("bestand") MultipartFile bestand) {
         try {
-            // Valideer het bestandstype
+            CertificateDTO certificate = certificateService.getCertificaatById(id);
+            if (certificate == null) {
+                return ResponseEntity.notFound().build();
+            }
+
             fileStorageService.validateFileType(
                 bestand, 
                 fileValidationConfig.getAllowedExtensions().toArray(String[]::new)
             );
             
-            // Sla het bestand op
             String bestandsNaam = fileStorageService.storeFile(bestand);
-            
-            // Update het certificaat met de nieuwe bestandsnaam
             CertificateDTO updatedCertificate = certificateService.updateCertificaatBestand(id, bestandsNaam);
             
             return ResponseEntity.ok(updatedCertificate);
-            
         } catch (InvalidFileException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (FileStorageException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 

@@ -6,7 +6,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +23,7 @@ import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.greentrade.greentrade.dto.ProductVerificationDTO;
+import com.greentrade.greentrade.exception.product.ProductNotFoundException;
 import com.greentrade.greentrade.exception.verification.DuplicateVerificationException;
 import com.greentrade.greentrade.exception.verification.InvalidVerificationStatusException;
 import com.greentrade.greentrade.exception.verification.ProductVerificationException;
@@ -52,6 +57,7 @@ class ProductVerificationServiceTest {
     private ProductVerificationDTO testVerificationDTO;
 
     @BeforeEach
+    @SuppressWarnings("unused")
     void setUp() {
         testUser = User.builder()
             .id(1L)
@@ -94,9 +100,10 @@ class ProductVerificationServiceTest {
     @Test
     void whenSubmitForVerification_withNonExistingProduct_thenThrowsException() {
         when(productRepository.findById(999L)).thenReturn(Optional.empty());
-        
-        ProductVerificationException thrown = assertThrows(
-            ProductVerificationException.class, 
+    
+    // Change expected exception type
+        ProductNotFoundException thrown = assertThrows(
+            ProductNotFoundException.class,  // Was ProductVerificationException.class 
             () -> verificationService.submitForVerification(999L)
         );
         assertEquals("Product niet gevonden met ID: 999", thrown.getMessage());

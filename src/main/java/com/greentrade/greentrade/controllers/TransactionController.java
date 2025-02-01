@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -82,10 +83,16 @@ public class TransactionController {
     })
     @PostMapping
     public ResponseEntity<TransactionDTO> maakTransactie(
-            @Parameter(description = "Transactie gegevens", required = true)
-            @RequestBody TransactionDTO transactieDTO) {
-        TransactionDTO nieuweTransactie = transactionService.maakTransactie(transactieDTO);
-        return new ResponseEntity<>(nieuweTransactie, HttpStatus.CREATED);
+        @Parameter(description = "Transactie gegevens", required = true)
+        @RequestBody TransactionDTO transactieDTO) {
+        try {
+            TransactionDTO nieuweTransactie = transactionService.maakTransactie(transactieDTO);
+            return new ResponseEntity<>(nieuweTransactie, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @Operation(
@@ -139,6 +146,7 @@ public class TransactionController {
         @ApiResponse(responseCode = "404", description = "Koper niet gevonden")
     })
     @GetMapping("/koper/{koperId}")
+    @PreAuthorize("hasRole('KOPER')")
     public ResponseEntity<List<TransactionDTO>> getTransactiesDoorKoper(
             @Parameter(description = "ID van de koper", required = true)
             @PathVariable Long koperId) {

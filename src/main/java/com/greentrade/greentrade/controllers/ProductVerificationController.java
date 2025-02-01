@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.greentrade.greentrade.dto.ProductVerificationDTO;
+import com.greentrade.greentrade.exception.product.ProductNotFoundException;
+import com.greentrade.greentrade.exception.verification.DuplicateVerificationException;
 import com.greentrade.greentrade.services.ProductVerificationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,12 +42,15 @@ public class ProductVerificationController {
     @ApiResponse(responseCode = "404", description = "Product niet gevonden")
     @PostMapping("/products/{productId}/submit")
     @PreAuthorize("hasRole('VERKOPER')")
-    public ResponseEntity<ProductVerificationDTO> submitForVerification(
-            @Parameter(description = "ID van het product", required = true)
-            @PathVariable Long productId) {
-        return ResponseEntity.ok(verificationService.submitForVerification(productId));
+    public ResponseEntity<ProductVerificationDTO> submitForVerification(@PathVariable Long productId) {
+        try {
+            return ResponseEntity.ok(verificationService.submitForVerification(productId));
+        } catch (ProductNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (DuplicateVerificationException e) {
+            throw e;  // Laat deze doorgaan naar de global exception handler
+        }
     }
-
     @Operation(
         summary = "Beoordeel product verificatie",
         description = "Administrators kunnen ingediende producten beoordelen"

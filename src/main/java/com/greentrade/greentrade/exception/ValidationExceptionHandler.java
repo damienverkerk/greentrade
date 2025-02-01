@@ -119,7 +119,7 @@ public class ValidationExceptionHandler {
     @ExceptionHandler(DuplicateVerificationException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateVerificationException(DuplicateVerificationException ex) {
         ErrorResponse error = new ErrorResponse(
-            HttpStatus.CONFLICT.value(),
+            HttpStatus.CONFLICT.value(),  // Gebruik 409 CONFLICT i.p.v. 400 BAD_REQUEST
             ex.getMessage(),
             LocalDateTime.now()
         );

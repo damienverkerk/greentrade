@@ -97,11 +97,11 @@ class TransactionControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "KOPER") 
     void whenGetTransactiesDoorKoper_thenSuccess() throws Exception {
         when(transactionService.getTransactiesDoorKoper(anyLong()))
             .thenReturn(Arrays.asList(testTransactie));
-
+    
         mockMvc.perform(get("/api/transacties/koper/{koperId}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].koperId").value(1));

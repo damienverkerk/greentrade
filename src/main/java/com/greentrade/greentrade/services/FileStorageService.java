@@ -48,6 +48,7 @@ public class FileStorageService {
 
     public String storeFile(MultipartFile file) {
         // Nullcheck voor het file object zelf
+        validateFileType(file, fileValidationConfig.getAllowedExtensions().toArray(String[]::new));
         if (file == null) {
             throw new InvalidFileException("Bestand mag niet null zijn");
         }
@@ -120,17 +121,15 @@ public class FileStorageService {
     
     public boolean validateFileType(@NonNull MultipartFile file, @NonNull String... allowedExtensions) {
         String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null) {
-            throw new InvalidFileException("Geen bestandsnaam opgegeven");
+        if (originalFilename == null || originalFilename.trim().isEmpty()) {
+            throw new InvalidFileException("Bestandsnaam mag niet null zijn");  // Dit was "Bestandsnaam ontbreekt"
         }
         
         String cleanFileName = StringUtils.cleanPath(originalFilename).toLowerCase();
-        boolean isValid = java.util.Arrays.stream(allowedExtensions)
+        if (!java.util.Arrays.stream(allowedExtensions)
                 .filter(Objects::nonNull)
                 .map(String::toLowerCase)
-                .anyMatch(ext -> cleanFileName.endsWith("." + ext));
-
-        if (!isValid) {
+                .anyMatch(ext -> cleanFileName.endsWith("." + ext))) {
             throw InvalidFileException.invalidType(String.join(", ", allowedExtensions));
         }
         

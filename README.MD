@@ -36,7 +36,7 @@ GreenTrade is an innovative web API designed to revolutionize the sustainable pr
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/[username]/greentrade.git
+git clone https://github.com/damienverkerk/greentrade.git
 cd greentrade
 ```
 
@@ -109,7 +109,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Contact
 
-Project Link: [https://github.com/[username]/greentrade](https://github.com/[username]/greentrade)
+Project Link: [https://github.com/damienverkerk/greentrade](https://github.com/damienverkerk/greentrade)
 
 ---
 

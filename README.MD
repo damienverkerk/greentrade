@@ -114,4 +114,4 @@ Project Link: [https://github.com/damienverkerk/greentrade](https://github.com/d
 ---
 
 **Version**: 1.0
-**Last Updated**: [Current Date]
+**Last Updated**: 02-02-2025

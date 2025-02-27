@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.greentrade.greentrade.dto.MessageDTO;
+import com.greentrade.greentrade.mappers.MessageMapper;
 import com.greentrade.greentrade.models.Message;
 import com.greentrade.greentrade.models.User;
 import com.greentrade.greentrade.repositories.MessageRepository;
@@ -18,36 +19,45 @@ public class MessageService {
 
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final MessageMapper messageMapper;
 
     @Autowired
-    public MessageService(MessageRepository messageRepository, UserRepository userRepository) {
+    public MessageService(
+            MessageRepository messageRepository, 
+            UserRepository userRepository,
+            MessageMapper messageMapper) {
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
+        this.messageMapper = messageMapper;
     }
 
     public List<MessageDTO> getAllMessages() {
         return messageRepository.findAll().stream()
-                .map(this::convertToDTO)
+                .map(messageMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     public Optional<MessageDTO> getMessageById(Long id) {
         return messageRepository.findById(id)
-                .map(this::convertToDTO);
+                .map(messageMapper::toDTO);
     }
 
     public MessageDTO sendMessage(MessageDTO messageDTO) {
-        Message message = convertToEntity(messageDTO);
+        User sender = findUserById(messageDTO.getSenderId());
+        User receiver = findUserById(messageDTO.getReceiverId());
+        
+        Message message = messageMapper.toEntity(messageDTO, sender, receiver);
         Message savedMessage = messageRepository.save(message);
-        return convertToDTO(savedMessage);
+        
+        return messageMapper.toDTO(savedMessage);
     }
 
     public MessageDTO markAsRead(Long id) {
-        Message message = messageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Message not found with id: " + id));
+        Message message = findMessageById(id);
         message.setRead(true);
+        
         Message updatedMessage = messageRepository.save(message);
-        return convertToDTO(updatedMessage);
+        return messageMapper.toDTO(updatedMessage);
     }
 
     public void deleteMessage(Long id) {
@@ -56,61 +66,34 @@ public class MessageService {
         }
         messageRepository.deleteById(id);
     }
-
     public List<MessageDTO> getReceivedMessagesForUser(Long userId) {
-        User receiver = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        User receiver = findUserById(userId);
         return messageRepository.findByReceiver(receiver).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
+            .map(messageMapper::toDTO)
+            .collect(Collectors.toList());
+        }
+    
     public List<MessageDTO> getSentMessagesByUser(Long userId) {
-        User sender = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        User sender = findUserById(userId);
         return messageRepository.findBySender(sender).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
+            .map(messageMapper::toDTO)
+            .collect(Collectors.toList());
+        }
+    
     public List<MessageDTO> getUnreadMessagesForUser(Long userId) {
-        User receiver = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        User receiver = findUserById(userId);
         return messageRepository.findByReceiverAndReadIsFalse(receiver).stream()
-                .map(this::convertToDTO)
+                .map(messageMapper::toDTO)
                 .collect(Collectors.toList());
-    }
-
-    private MessageDTO convertToDTO(Message message) {
-        return new MessageDTO(
-                message.getId(),
-                message.getSender().getId(),
-                message.getReceiver().getId(),
-                message.getSubject(),
-                message.getContent(),
-                message.getTimestamp(),
-                message.isRead()
-        );
-    }
-
-    private Message convertToEntity(MessageDTO dto) {
-        Message message = new Message();
-        if (dto.getId() != null) {
-            message.setId(dto.getId());
         }
         
-        User sender = userRepository.findById(dto.getSenderId())
-                .orElseThrow(() -> new RuntimeException("Sender not found with id: " + dto.getSenderId()));
-        User receiver = userRepository.findById(dto.getReceiverId())
-                .orElseThrow(() -> new RuntimeException("Receiver not found with id: " + dto.getReceiverId()));
-
-        message.setSender(sender);
-        message.setReceiver(receiver);
-        message.setSubject(dto.getSubject());
-        message.setContent(dto.getContent());
-        message.setTimestamp(dto.getTimestamp());
-        message.setRead(dto.isRead());
-
-        return message;
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        }
+        
+    private Message findMessageById(Long id) {
+        return messageRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Message not found with id: " + id));
+        }
     }
-}

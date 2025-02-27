@@ -10,6 +10,7 @@ import com.greentrade.greentrade.dto.ProductDTO;
 import com.greentrade.greentrade.exception.product.InvalidProductDataException;
 import com.greentrade.greentrade.exception.product.ProductNotFoundException;
 import com.greentrade.greentrade.exception.security.UserNotFoundException;
+import com.greentrade.greentrade.mappers.ProductMapper;
 import com.greentrade.greentrade.models.Product;
 import com.greentrade.greentrade.models.User;
 import com.greentrade.greentrade.repositories.ProductRepository;
@@ -20,58 +21,57 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final ProductMapper productMapper;
 
     @Autowired
-    public ProductService(ProductRepository productRepository, UserRepository userRepository) {
+    public ProductService(
+            ProductRepository productRepository, 
+            UserRepository userRepository,
+            ProductMapper productMapper) {
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.productMapper = productMapper;
     }
 
     public List<ProductDTO> getAllProducts() {
         return productRepository.findAll().stream()
-                .map(this::convertToDTO)
+                .map(productMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     public ProductDTO getProductById(Long id) {
         return productRepository.findById(id)
-                .map(this::convertToDTO)
+                .map(productMapper::toDTO)
                 .orElseThrow(() -> new ProductNotFoundException(id));
     }
 
     public List<ProductDTO> getProductsBySeller(Long sellerId) {
-        User seller = userRepository.findById(sellerId)
-                .orElseThrow(() -> new UserNotFoundException(sellerId));
+        User seller = findSellerById(sellerId);
         return productRepository.findBySeller(seller).stream()
-                .map(this::convertToDTO)
+                .map(productMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     public List<ProductDTO> searchProductsByName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            throw new InvalidProductDataException("name", "Search query cannot be empty");
-        }
+        validateSearchQuery(name);
         return productRepository.findByNameContainingIgnoreCase(name).stream()
-                .map(this::convertToDTO)
+                .map(productMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     public List<ProductDTO> getProductsBySustainabilityScore(Integer minimumScore) {
-        if (minimumScore == null || minimumScore < 0 || minimumScore > 100) {
-            throw new InvalidProductDataException("sustainabilityScore", 
-                "Score must be between 0 and 100");
-        }
+        validateSustainabilityScore(minimumScore);
         return productRepository.findBySustainabilityScoreGreaterThanEqual(minimumScore).stream()
-                .map(this::convertToDTO)
+                .map(productMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     public ProductDTO createProduct(ProductDTO productDTO) {
         validateProductData(productDTO);
-        
-        Product product = convertToEntity(productDTO);
+        User seller = findSellerById(productDTO.getSellerId());
+        Product product = productMapper.toEntity(productDTO, seller);
         Product savedProduct = productRepository.save(product);
-        return convertToDTO(savedProduct);
+        return productMapper.toDTO(savedProduct);
     }
 
     public ProductDTO updateProduct(Long id, ProductDTO productDTO) {
@@ -80,13 +80,14 @@ public class ProductService {
         }
 
         validateProductData(productDTO);
+        User seller = findSellerById(productDTO.getSellerId());
         
-        return productRepository.findById(id)
-                .map(product -> {
-                    updateProductFromDTO(product, productDTO);
-                    return convertToDTO(productRepository.save(product));
-                })
+        Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));
+        
+        updateProductFields(product, productDTO, seller);
+        Product updatedProduct = productRepository.save(product);
+        return productMapper.toDTO(updatedProduct);
     }
 
     public void deleteProduct(Long id) {
@@ -94,6 +95,24 @@ public class ProductService {
             throw new ProductNotFoundException(id);
         }
         productRepository.deleteById(id);
+    }
+    
+    private User findSellerById(Long sellerId) {
+        return userRepository.findById(sellerId)
+                .orElseThrow(() -> new UserNotFoundException(sellerId));
+    }
+    
+    private void validateSearchQuery(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new InvalidProductDataException("name", "Search query cannot be empty");
+        }
+    }
+    
+    private void validateSustainabilityScore(Integer minimumScore) {
+        if (minimumScore == null || minimumScore < 0 || minimumScore > 100) {
+            throw new InvalidProductDataException("sustainabilityScore", 
+                "Score must be between 0 and 100");
+        }
     }
 
     private void validateProductData(ProductDTO productDTO) {
@@ -109,37 +128,13 @@ public class ProductService {
                 "Sustainability score must be between 0 and 100");
         }
     }
-
-    private ProductDTO convertToDTO(Product product) {
-        return new ProductDTO(
-                product.getId(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getSustainabilityScore(),
-                product.getSustainabilityCertificate(),
-                product.getSeller().getId()
-        );
-    }
-
-    private Product convertToEntity(ProductDTO productDTO) {
-        Product product = new Product();
-        return updateProductFromDTO(product, productDTO);
-    }
-
-    private Product updateProductFromDTO(Product product, ProductDTO productDTO) {
+    
+    private void updateProductFields(Product product, ProductDTO productDTO, User seller) {
         product.setName(productDTO.getName());
         product.setDescription(productDTO.getDescription());
         product.setPrice(productDTO.getPrice());
         product.setSustainabilityScore(productDTO.getSustainabilityScore());
         product.setSustainabilityCertificate(productDTO.getSustainabilityCertificate());
-        
-        if (productDTO.getSellerId() != null) {
-            User seller = userRepository.findById(productDTO.getSellerId())
-                    .orElseThrow(() -> new UserNotFoundException(productDTO.getSellerId()));
-            product.setSeller(seller);
-        }
-        
-        return product;
+        product.setSeller(seller);
     }
 }

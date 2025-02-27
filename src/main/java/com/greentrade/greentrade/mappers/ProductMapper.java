@@ -1,10 +1,9 @@
 package com.greentrade.greentrade.mappers;
 
-import org.springframework.stereotype.Component;
-
 import com.greentrade.greentrade.dto.ProductDTO;
 import com.greentrade.greentrade.models.Product;
 import com.greentrade.greentrade.models.User;
+import org.springframework.stereotype.Component;
 
 @Component
 public class ProductMapper {

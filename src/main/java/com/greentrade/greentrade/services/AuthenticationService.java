@@ -29,55 +29,34 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest request) {
-        // Valideer of email al bestaat
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new SecurityException("Email is al in gebruik");
-        }
-
-        // Valideer wachtwoord sterkte
+        validateEmailAvailability(request.getEmail());
         validatePassword(request.getPassword());
 
-        // Maak nieuwe gebruiker aan
-        var user = User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.valueOf(request.getRole()))
-                .verificationStatus(true)  // Standaard op true voor nu
-                .build();
-        
+        User user = createUserFromRequest(request);
         var savedUser = userRepository.save(user);
         var jwtToken = jwtService.generateToken(savedUser);
         
-        return AuthResponse.builder()
-                .token(jwtToken)
-                .build();
+        return createAuthResponse(jwtToken);
     }
 
     public AuthResponse authenticate(AuthRequest request) {
         try {
-            // Authenticatie poging
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.getEmail(),
-                            request.getWachtwoord()
-                    )
-            );
+            authenticateUser(request.getEmail(), request.getWachtwoord());
             
-            // Haal gebruiker op en genereer token
-            var user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new UserNotFoundException(request.getEmail()));
-            
+            var user = findUserByEmail(request.getEmail());
             var jwtToken = jwtService.generateToken(user);
             
-            return AuthResponse.builder()
-                    .token(jwtToken)
-                    .build();
-                    
+            return createAuthResponse(jwtToken);
         } catch (DisabledException e) {
             throw new SecurityException("Account is gedeactiveerd");
         } catch (BadCredentialsException e) {
             throw new InvalidCredentialsException();
+        }
+    }
+    
+    private void validateEmailAvailability(String email) {
+        if (userRepository.existsByEmail(email)) {
+            throw new SecurityException("Email is al in gebruik");
         }
     }
 
@@ -95,5 +74,35 @@ public class AuthenticationService {
                 "Wachtwoord moet minimaal één letter, één cijfer en één speciaal karakter bevatten"
             );
         }
+    }
+    
+    private User createUserFromRequest(RegisterRequest request) {
+        return User.builder()
+                .name(request.getName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.valueOf(request.getRole()))
+                .verificationStatus(true)  // Standaard op true
+                .build();
+    }
+    
+    private void authenticateUser(String email, String password) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        email,
+                        password
+                )
+        );
+    }
+    
+    private User findUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException(email));
+    }
+    
+    private AuthResponse createAuthResponse(String token) {
+        return AuthResponse.builder()
+                .token(token)
+                .build();
     }
 }

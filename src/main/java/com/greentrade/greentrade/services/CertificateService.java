@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.greentrade.greentrade.dto.CertificateDTO;
+import com.greentrade.greentrade.mappers.CertificateMapper;
 import com.greentrade.greentrade.models.Certificate;
 import com.greentrade.greentrade.models.User;
 import com.greentrade.greentrade.repositories.CertificateRepository;
@@ -19,25 +20,29 @@ public class CertificateService {
     private final CertificateRepository certificateRepository;
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
+    private final CertificateMapper certificateMapper;
 
     @Autowired
-    public CertificateService(CertificateRepository certificateRepository, 
-                            UserRepository userRepository,
-                            FileStorageService fileStorageService) {
+    public CertificateService(
+            CertificateRepository certificateRepository, 
+            UserRepository userRepository,
+            FileStorageService fileStorageService,
+            CertificateMapper certificateMapper) {
         this.certificateRepository = certificateRepository;
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
+        this.certificateMapper = certificateMapper;
     }
 
     public List<CertificateDTO> getAllCertificates() {
         return certificateRepository.findAll().stream()
-                .map(this::convertToDTO)
+                .map(certificateMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     public CertificateDTO getCertificateById(Long id) {
         return certificateRepository.findById(id)
-                .map(this::convertToDTO)
+                .map(certificateMapper::toDTO)
                 .orElse(null);
     }
 
@@ -46,29 +51,41 @@ public class CertificateService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         
         return certificateRepository.findByUser(user).stream()
-                .map(this::convertToDTO)
+                .map(certificateMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     public List<CertificateDTO> getExpiredCertificates(LocalDate date) {
         return certificateRepository.findByExpiryDateBefore(date).stream()
-                .map(this::convertToDTO)
+                .map(certificateMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     public CertificateDTO createCertificate(CertificateDTO certificateDTO) {
-        Certificate certificate = convertToEntity(certificateDTO);
+        User user = null;
+        if (certificateDTO.getUserId() != null) {
+            user = userRepository.findById(certificateDTO.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + certificateDTO.getUserId()));
+        }
+        
+        Certificate certificate = certificateMapper.toEntity(certificateDTO, user);
         Certificate savedCertificate = certificateRepository.save(certificate);
-        return convertToDTO(savedCertificate);
+        return certificateMapper.toDTO(savedCertificate);
     }
 
     public CertificateDTO updateCertificate(Long id, CertificateDTO certificateDTO) {
         Certificate certificate = certificateRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Certificate not found with id: " + id));
 
-        updateCertificateFromDTO(certificate, certificateDTO);
+        User user = null;
+        if (certificateDTO.getUserId() != null) {
+            user = userRepository.findById(certificateDTO.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + certificateDTO.getUserId()));
+        }
+        
+        updateCertificateFields(certificate, certificateDTO, user);
         Certificate updatedCertificate = certificateRepository.save(certificate);
-        return convertToDTO(updatedCertificate);
+        return certificateMapper.toDTO(updatedCertificate);
     }
 
     public void deleteCertificate(Long id) {
@@ -104,29 +121,10 @@ public class CertificateService {
 
         certificate.setFilePath(fileName);
         Certificate updatedCertificate = certificateRepository.save(certificate);
-        return convertToDTO(updatedCertificate);
+        return certificateMapper.toDTO(updatedCertificate);
     }
-
-    private CertificateDTO convertToDTO(Certificate certificate) {
-        return new CertificateDTO(
-            certificate.getId(),
-            certificate.getName(),
-            certificate.getIssuer(),
-            certificate.getIssueDate(),
-            certificate.getExpiryDate(),
-            certificate.getDescription(),
-            certificate.getFilePath(),
-            certificate.getUser() != null ? certificate.getUser().getId() : null
-        );
-    }
-
-    private Certificate convertToEntity(CertificateDTO dto) {
-        Certificate certificate = new Certificate();
-        updateCertificateFromDTO(certificate, dto);
-        return certificate;
-    }
-
-    private void updateCertificateFromDTO(Certificate certificate, CertificateDTO dto) {
+    
+    private void updateCertificateFields(Certificate certificate, CertificateDTO dto, User user) {
         certificate.setName(dto.getName());
         certificate.setIssuer(dto.getIssuer());
         certificate.setIssueDate(dto.getIssueDate());
@@ -137,11 +135,7 @@ public class CertificateService {
         if (dto.getFilePath() != null) {
             certificate.setFilePath(dto.getFilePath());
         }
-
-        if (dto.getUserId() != null) {
-            User user = userRepository.findById(dto.getUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
-            certificate.setUser(user);
-        }
+        
+        certificate.setUser(user);
     }
 }

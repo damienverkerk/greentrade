@@ -35,6 +35,10 @@ public class FileStorageService {
         this.fileStorageLocation = Paths.get(fileStorageConfig.getUploadDir())
                 .toAbsolutePath().normalize();
 
+        initializeStorageLocation();
+    }
+    
+    private void initializeStorageLocation() {
         try {
             Files.createDirectories(this.fileStorageLocation);
         } catch (IOException e) {
@@ -47,6 +51,19 @@ public class FileStorageService {
     }
 
     public String storeFile(MultipartFile file) {
+        validateFile(file);
+        
+        String fileName = generateUniqueFileName(file);
+        
+        try {
+            saveFileToStorage(file, fileName);
+            return fileName;
+        } catch (IOException e) {
+            throw new FileStorageException("Kon bestand " + fileName + " niet opslaan", e);
+        }
+    }    
+    
+    private void validateFile(MultipartFile file) {
         // Nullcheck voor het file object zelf
         validateFileType(file, fileValidationConfig.getAllowedExtensions().toArray(String[]::new));
         if (file == null) {
@@ -73,23 +90,23 @@ public class FileStorageService {
         if (file.getSize() > fileValidationConfig.getMaxFileSize()) {
             throw InvalidFileException.tooLarge(fileValidationConfig.getMaxFileSize());
         }
-        
-        try {
-            String fileExtension = "";
-            if (fileName.contains(".")) {
-                fileExtension = fileName.substring(fileName.lastIndexOf("."));
-            }
-            
-            String uniqueFileName = UUID.randomUUID().toString() + fileExtension;
+    }
     
-            Path targetLocation = this.fileStorageLocation.resolve(uniqueFileName);
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-    
-            return uniqueFileName;
-        } catch (IOException e) {
-            throw new FileStorageException("Kon bestand " + fileName + " niet opslaan", e);
+    private String generateUniqueFileName(MultipartFile file) {
+        String originalFilename = file.getOriginalFilename();
+        String fileExtension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
-    }    
+        
+        return UUID.randomUUID().toString() + fileExtension;
+    }
+    
+    private void saveFileToStorage(MultipartFile file, String fileName) throws IOException {
+        Path targetLocation = this.fileStorageLocation.resolve(fileName);
+        Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+    }
+    
     public Resource loadFileAsResource(@NonNull String fileName) {
         try {
             String cleanFileName = StringUtils.cleanPath(Objects.requireNonNull(fileName, "Bestandsnaam mag niet null zijn"));
@@ -122,14 +139,16 @@ public class FileStorageService {
     public boolean validateFileType(@NonNull MultipartFile file, @NonNull String... allowedExtensions) {
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.trim().isEmpty()) {
-            throw new InvalidFileException("Bestandsnaam mag niet null zijn");  // Dit was "Bestandsnaam ontbreekt"
+            throw new InvalidFileException("Bestandsnaam mag niet null zijn");
         }
         
         String cleanFileName = StringUtils.cleanPath(originalFilename).toLowerCase();
-        if (!java.util.Arrays.stream(allowedExtensions)
+        boolean matchesAllowedExtension = java.util.Arrays.stream(allowedExtensions)
                 .filter(Objects::nonNull)
                 .map(String::toLowerCase)
-                .anyMatch(ext -> cleanFileName.endsWith("." + ext))) {
+                .anyMatch(ext -> cleanFileName.endsWith("." + ext));
+                
+        if (!matchesAllowedExtension) {
             throw InvalidFileException.invalidType(String.join(", ", allowedExtensions));
         }
         

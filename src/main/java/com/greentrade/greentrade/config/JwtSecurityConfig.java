@@ -36,14 +36,18 @@ public class JwtSecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
+                // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/swagger-ui/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/seller/**").hasRole("SELLER")
-                .requestMatchers("/api/buyer/**").hasRole("BUYER")
+                
+                // Role-specific endpoints
                 .requestMatchers("/api/verifications/pending").hasRole("ADMIN")
+                .requestMatchers("/api/verifications/*/review").hasRole("ADMIN")
+                .requestMatchers("/api/verifications/products/*/submit").hasRole("SELLER")
                 .requestMatchers("/api/transactions/buyer/**").hasRole("BUYER")
+                
+                // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> 

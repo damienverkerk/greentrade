@@ -2,35 +2,36 @@ package com.greentrade.greentrade.mappers;
 
 import org.springframework.stereotype.Component;
 
-import com.greentrade.greentrade.dto.UserDTO;
+import com.greentrade.greentrade.dto.user.UserCreateRequest;
+import com.greentrade.greentrade.dto.user.UserResponse;
+import com.greentrade.greentrade.models.Role;
 import com.greentrade.greentrade.models.User;
 
 @Component
 public class UserMapper {
     
-    public UserDTO toDTO(User user) {
+    public UserResponse toResponse(User user) {
         if (user == null) {
             return null;
         }
         
-        return new UserDTO(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRole().toString()
-        );
+        return UserResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole().toString())
+                .build();
     }
     
-    public User toEntity(UserDTO dto) {
-        if (dto == null) {
+    public User createRequestToEntity(UserCreateRequest request) {
+        if (request == null) {
             return null;
         }
         
-        User user = new User();
-        user.setId(dto.getId());
-        user.setName(dto.getName());
-        user.setEmail(dto.getEmail());
-        
-        return user;
+        return User.builder()
+                .name(request.getName())
+                .email(request.getEmail())
+                .role(Role.valueOf(request.getRole()))
+                .build();
     }
 }

@@ -1,8 +1,11 @@
 package com.greentrade.greentrade.mappers;
 
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Component;
 
-import com.greentrade.greentrade.dto.TransactionDTO;
+import com.greentrade.greentrade.dto.transaction.TransactionCreateRequest;
+import com.greentrade.greentrade.dto.transaction.TransactionResponse;
 import com.greentrade.greentrade.models.Product;
 import com.greentrade.greentrade.models.Transaction;
 import com.greentrade.greentrade.models.User;
@@ -10,33 +13,32 @@ import com.greentrade.greentrade.models.User;
 @Component
 public class TransactionMapper {
     
-    public TransactionDTO toDTO(Transaction transaction) {
+    public TransactionResponse toResponse(Transaction transaction) {
         if (transaction == null) {
             return null;
         }
         
-        return new TransactionDTO(
-                transaction.getId(),
-                transaction.getBuyer().getId(),
-                transaction.getProduct().getId(),
-                transaction.getAmount(),
-                transaction.getDate(),
-                transaction.getStatus()
-        );
+        return TransactionResponse.builder()
+                .id(transaction.getId())
+                .buyerId(transaction.getBuyer().getId())
+                .productId(transaction.getProduct().getId())
+                .amount(transaction.getAmount())
+                .date(transaction.getDate())
+                .status(transaction.getStatus())
+                .build();
     }
     
-    public Transaction toEntity(TransactionDTO dto, User buyer, Product product) {
-        if (dto == null) {
+    public Transaction createRequestToEntity(TransactionCreateRequest request, User buyer, Product product) {
+        if (request == null) {
             return null;
         }
         
         Transaction transaction = new Transaction();
-        transaction.setId(dto.getId());
-        transaction.setAmount(dto.getAmount());
-        transaction.setDate(dto.getDate());
-        transaction.setStatus(dto.getStatus());
         transaction.setBuyer(buyer);
         transaction.setProduct(product);
+        transaction.setAmount(request.getAmount());
+        transaction.setDate(LocalDateTime.now());
+        transaction.setStatus("PENDING");
         
         return transaction;
     }

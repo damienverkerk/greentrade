@@ -1,5 +1,6 @@
 package com.greentrade.greentrade.controllers;
 
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +15,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.greentrade.greentrade.dto.ProductDTO;
+import com.greentrade.greentrade.dto.product.ProductCreateRequest;
+import com.greentrade.greentrade.dto.product.ProductResponse;
+import com.greentrade.greentrade.dto.product.ProductUpdateRequest;
 import com.greentrade.greentrade.services.ProductService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,11 +51,11 @@ public class ProductController {
         @ApiResponse(
             responseCode = "200",
             description = "Products successfully retrieved",
-            content = @Content(schema = @Schema(implementation = ProductDTO.class))
+            content = @Content(schema = @Schema(implementation = ProductResponse.class))
         )
     })
     @GetMapping
-    public ResponseEntity<List<ProductDTO>> getAllProducts() {
+    public ResponseEntity<List<ProductResponse>> getAllProducts() {
         return new ResponseEntity<>(productService.getAllProducts(), HttpStatus.OK);
     }
 
@@ -64,12 +68,11 @@ public class ProductController {
         @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDTO> getProductById(
+    public ResponseEntity<ProductResponse> getProductById(
             @Parameter(description = "ID of the product", required = true)
             @PathVariable Long id) {
-        ProductDTO product = productService.getProductById(id);
-        return product != null ? new ResponseEntity<>(product, HttpStatus.OK) 
-                             : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        ProductResponse product = productService.getProductById(id);
+        return new ResponseEntity<>(product, HttpStatus.OK);
     }
 
     @Operation(
@@ -81,11 +84,18 @@ public class ProductController {
         @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PostMapping
-    public ResponseEntity<ProductDTO> createProduct(
+    public ResponseEntity<ProductResponse> createProduct(
             @Parameter(description = "Product data", required = true)
-            @Valid @RequestBody ProductDTO productDTO) {
-        ProductDTO newProduct = productService.createProduct(productDTO);
-        return new ResponseEntity<>(newProduct, HttpStatus.CREATED);
+            @Valid @RequestBody ProductCreateRequest request) {
+        ProductResponse newProduct = productService.createProduct(request);
+        
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(newProduct.getId())
+                .toUri();
+        
+        return ResponseEntity.created(location).body(newProduct);
     }
 
     @Operation(
@@ -98,13 +108,13 @@ public class ProductController {
         @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<ProductDTO> updateProduct(
+    public ResponseEntity<ProductResponse> updateProduct(
             @Parameter(description = "ID of the product", required = true)
             @PathVariable Long id,
             @Parameter(description = "Updated product data", required = true)
-            @Valid @RequestBody ProductDTO productDTO) {
+            @Valid @RequestBody ProductUpdateRequest request) {
         try {
-            ProductDTO updatedProduct = productService.updateProduct(id, productDTO);
+            ProductResponse updatedProduct = productService.updateProduct(id, request);
             return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -139,10 +149,10 @@ public class ProductController {
         @ApiResponse(responseCode = "200", description = "Search successfully executed")
     })
     @GetMapping("/search")
-    public ResponseEntity<List<ProductDTO>> searchProducts(
+    public ResponseEntity<List<ProductResponse>> searchProducts(
             @Parameter(description = "Name to search for", required = true)
             @RequestParam String name) {
-        List<ProductDTO> products = productService.searchProductsByName(name);
+        List<ProductResponse> products = productService.searchProductsByName(name);
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
@@ -154,10 +164,10 @@ public class ProductController {
         @ApiResponse(responseCode = "200", description = "Products successfully retrieved")
     })
     @GetMapping("/sustainable")
-    public ResponseEntity<List<ProductDTO>> getSustainableProducts(
+    public ResponseEntity<List<ProductResponse>> getSustainableProducts(
             @Parameter(description = "Minimum sustainability score", required = true)
             @RequestParam Integer minimumScore) {
-        List<ProductDTO> products = productService.getProductsBySustainabilityScore(minimumScore);
+        List<ProductResponse> products = productService.getProductsBySustainabilityScore(minimumScore);
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 }

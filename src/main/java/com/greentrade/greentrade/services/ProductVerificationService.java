@@ -1,13 +1,14 @@
 package com.greentrade.greentrade.services;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.greentrade.greentrade.dto.ProductVerificationDTO;
+import com.greentrade.greentrade.dto.verification.VerificationCreateRequest;
+import com.greentrade.greentrade.dto.verification.VerificationResponse;
+import com.greentrade.greentrade.dto.verification.VerificationReviewRequest;
 import com.greentrade.greentrade.exception.product.ProductNotFoundException;
 import com.greentrade.greentrade.exception.security.UserNotFoundException;
 import com.greentrade.greentrade.exception.verification.DuplicateVerificationException;
@@ -42,49 +43,51 @@ public class ProductVerificationService {
     }
 
     @Transactional
-    public ProductVerificationDTO submitForVerification(Long productId) {
+    public VerificationResponse submitForVerification(Long productId) {
         Product product = findProductById(productId);
         checkForExistingVerification(product);
         
-        ProductVerification verification = createPendingVerification(product);
+        VerificationCreateRequest request = new VerificationCreateRequest(productId);
+        ProductVerification verification = verificationMapper.createRequestToEntity(request, product);
         ProductVerification savedVerification = verificationRepository.save(verification);
         
-        return verificationMapper.toDTO(savedVerification);
+        return verificationMapper.toResponse(savedVerification);
     }
 
     @Transactional
-    public ProductVerificationDTO reviewProduct(Long verificationId, ProductVerificationDTO dto, Long reviewerId) {
+    public VerificationResponse reviewProduct(Long verificationId, VerificationReviewRequest request, Long reviewerId) {
         ProductVerification verification = findVerificationById(verificationId);
         validateVerificationStatus(verification);
         
         User reviewer = findReviewerById(reviewerId);
-        validateReviewData(dto);
+        validateReviewData(request);
         
-        updateVerificationWithReviewData(verification, dto, reviewer);
+        verificationMapper.updateFromReviewRequest(verification, request, reviewer);
         
-        if (dto.getStatus() == VerificationStatus.APPROVED) {
-            updateProductSustainabilityScore(verification, dto);
+        if (request.getStatus() == VerificationStatus.APPROVED) {
+            updateProductSustainabilityScore(verification.getProduct(), request.getSustainabilityScore());
         }
         
-        return verificationMapper.toDTO(verificationRepository.save(verification));
+        ProductVerification savedVerification = verificationRepository.save(verification);
+        return verificationMapper.toResponse(savedVerification);
     }
 
-    public List<ProductVerificationDTO> getPendingVerifications() {
+    public List<VerificationResponse> getPendingVerifications() {
         try {
             return verificationRepository.findByStatus(VerificationStatus.PENDING)
                     .stream()
-                    .map(verificationMapper::toDTO)
+                    .map(verificationMapper::toResponse)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             throw new ProductVerificationException("Failed to retrieve verifications: " + e.getMessage());
         }
     }
 
-    public List<ProductVerificationDTO> getVerificationsByProduct(Long productId) {
+    public List<VerificationResponse> getVerificationsByProduct(Long productId) {
         try {
             return verificationRepository.findByProductId(productId)
                     .stream()
-                    .map(verificationMapper::toDTO)
+                    .map(verificationMapper::toResponse)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             throw new ProductVerificationException("Failed to retrieve product verifications: " + e.getMessage());
@@ -106,14 +109,6 @@ public class ProductVerificationService {
                 });
     }
     
-    private ProductVerification createPendingVerification(Product product) {
-        ProductVerification verification = new ProductVerification();
-        verification.setProduct(product);
-        verification.setSubmissionDate(LocalDateTime.now());
-        verification.setStatus(VerificationStatus.PENDING);
-        return verification;
-    }
-    
     private ProductVerification findVerificationById(Long verificationId) {
         return verificationRepository.findById(verificationId)
                 .orElseThrow(() -> new VerificationNotFoundException(verificationId));
@@ -122,7 +117,7 @@ public class ProductVerificationService {
     private void validateVerificationStatus(ProductVerification verification) {
         if (verification.getStatus() != VerificationStatus.PENDING 
             && verification.getStatus() != VerificationStatus.IN_REVIEW) {
-            throw new InvalidVerificationStatusException("Deze verificatie kan niet meer worden beoordeeld");
+            throw new InvalidVerificationStatusException("This verification cannot be reviewed anymore");
         }
     }
     
@@ -131,30 +126,19 @@ public class ProductVerificationService {
                 .orElseThrow(() -> new UserNotFoundException(reviewerId));
     }
     
-    private void validateReviewData(ProductVerificationDTO dto) {
-        if (dto.getStatus() == VerificationStatus.APPROVED && dto.getSustainabilityScore() == null) {
-            throw new ProductVerificationException("Duurzaamheidsscore is verplicht bij goedkeuring");
+    private void validateReviewData(VerificationReviewRequest request) {
+        if (request.getStatus() == VerificationStatus.APPROVED && request.getSustainabilityScore() == null) {
+            throw new ProductVerificationException("Sustainability score is required for approval");
         }
         
-        if (dto.getStatus() == VerificationStatus.REJECTED && 
-            (dto.getRejectionReason() == null || dto.getRejectionReason().trim().isEmpty())) {
-            throw new ProductVerificationException("Reden van afwijzing is verplicht bij afkeuring");
+        if (request.getStatus() == VerificationStatus.REJECTED && 
+            (request.getRejectionReason() == null || request.getRejectionReason().trim().isEmpty())) {
+            throw new ProductVerificationException("Rejection reason is required when rejecting");
         }
     }
     
-    private void updateVerificationWithReviewData(ProductVerification verification, 
-                                                 ProductVerificationDTO dto, 
-                                                 User reviewer) {
-        verification.setStatus(dto.getStatus());
-        verification.setReviewerNotes(dto.getReviewerNotes());
-        verification.setReviewer(reviewer);
-        verification.setVerificationDate(LocalDateTime.now());
-        verification.setSustainabilityScore(dto.getSustainabilityScore());
-        verification.setRejectionReason(dto.getRejectionReason());
-    }
-    
-    private void updateProductSustainabilityScore(ProductVerification verification, ProductVerificationDTO dto) {
-        verification.getProduct().setSustainabilityScore(dto.getSustainabilityScore());
-        productRepository.save(verification.getProduct());
+    private void updateProductSustainabilityScore(Product product, Integer sustainabilityScore) {
+        product.setSustainabilityScore(sustainabilityScore);
+        productRepository.save(product);
     }
 }

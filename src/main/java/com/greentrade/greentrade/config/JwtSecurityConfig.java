@@ -39,8 +39,11 @@ public class JwtSecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/seller/**").hasRole("SELLER")
+                .requestMatchers("/api/buyer/**").hasRole("BUYER")
                 .requestMatchers("/api/verifications/pending").hasRole("ADMIN")
-                .requestMatchers("/api/transacties/koper/**").hasRole("KOPER")
+                .requestMatchers("/api/transactions/buyer/**").hasRole("BUYER")
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> 

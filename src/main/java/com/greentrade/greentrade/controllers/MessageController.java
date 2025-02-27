@@ -1,9 +1,9 @@
 package com.greentrade.greentrade.controllers;
 
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.greentrade.greentrade.dto.MessageDTO;
+import com.greentrade.greentrade.dto.message.MessageCreateRequest;
+import com.greentrade.greentrade.dto.message.MessageResponse;
 import com.greentrade.greentrade.services.MessageService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,13 +37,13 @@ public class MessageController {
 
     @Operation(summary = "Get all messages")
     @GetMapping
-    public ResponseEntity<List<MessageDTO>> getAllMessages() {
+    public ResponseEntity<List<MessageResponse>> getAllMessages() {
         return ResponseEntity.ok(messageService.getAllMessages());
     }
 
     @Operation(summary = "Get a specific message")
     @GetMapping("/{id}")
-    public ResponseEntity<MessageDTO> getMessageById(@PathVariable Long id) {
+    public ResponseEntity<MessageResponse> getMessageById(@PathVariable Long id) {
         return messageService.getMessageById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -49,16 +51,23 @@ public class MessageController {
 
     @Operation(summary = "Send a new message")
     @PostMapping
-    public ResponseEntity<MessageDTO> sendMessage(@Valid @RequestBody MessageDTO message) {
-        MessageDTO newMessage = messageService.sendMessage(message);
-        return new ResponseEntity<>(newMessage, HttpStatus.CREATED);
+    public ResponseEntity<MessageResponse> sendMessage(@Valid @RequestBody MessageCreateRequest request) {
+        MessageResponse newMessage = messageService.sendMessage(request);
+        
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(newMessage.getId())
+                .toUri();
+        
+        return ResponseEntity.created(location).body(newMessage);
     }
 
     @Operation(summary = "Mark a message as read")
     @PutMapping("/{id}/mark-read")
-    public ResponseEntity<MessageDTO> markAsRead(@PathVariable Long id) {
+    public ResponseEntity<MessageResponse> markAsRead(@PathVariable Long id) {
         try {
-            MessageDTO readMessage = messageService.markAsRead(id);
+            MessageResponse readMessage = messageService.markAsRead(id);
             return ResponseEntity.ok(readMessage);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -78,9 +87,9 @@ public class MessageController {
 
     @Operation(summary = "Get received messages for a user")
     @GetMapping("/received/{userId}")
-    public ResponseEntity<List<MessageDTO>> getReceivedMessagesForUser(@PathVariable Long userId) {
+    public ResponseEntity<List<MessageResponse>> getReceivedMessagesForUser(@PathVariable Long userId) {
         try {
-            List<MessageDTO> messages = messageService.getReceivedMessagesForUser(userId);
+            List<MessageResponse> messages = messageService.getReceivedMessagesForUser(userId);
             return ResponseEntity.ok(messages);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -89,9 +98,9 @@ public class MessageController {
 
     @Operation(summary = "Get sent messages from a user")
     @GetMapping("/sent/{userId}")
-    public ResponseEntity<List<MessageDTO>> getSentMessagesByUser(@PathVariable Long userId) {
+    public ResponseEntity<List<MessageResponse>> getSentMessagesByUser(@PathVariable Long userId) {
         try {
-            List<MessageDTO> messages = messageService.getSentMessagesByUser(userId);
+            List<MessageResponse> messages = messageService.getSentMessagesByUser(userId);
             return ResponseEntity.ok(messages);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -100,9 +109,9 @@ public class MessageController {
 
     @Operation(summary = "Get unread messages for a user")
     @GetMapping("/unread/{userId}")
-    public ResponseEntity<List<MessageDTO>> getUnreadMessagesForUser(@PathVariable Long userId) {
+    public ResponseEntity<List<MessageResponse>> getUnreadMessagesForUser(@PathVariable Long userId) {
         try {
-            List<MessageDTO> messages = messageService.getUnreadMessagesForUser(userId);
+            List<MessageResponse> messages = messageService.getUnreadMessagesForUser(userId);
             return ResponseEntity.ok(messages);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();

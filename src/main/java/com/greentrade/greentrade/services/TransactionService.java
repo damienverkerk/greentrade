@@ -8,7 +8,8 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.greentrade.greentrade.dto.TransactionDTO;
+import com.greentrade.greentrade.dto.transaction.TransactionCreateRequest;
+import com.greentrade.greentrade.dto.transaction.TransactionResponse;
 import com.greentrade.greentrade.exception.product.ProductNotFoundException;
 import com.greentrade.greentrade.exception.security.UserNotFoundException;
 import com.greentrade.greentrade.mappers.TransactionMapper;
@@ -39,54 +40,50 @@ public class TransactionService {
         this.transactionMapper = transactionMapper;
     }
 
-    public List<TransactionDTO> getAllTransactions() {
+    public List<TransactionResponse> getAllTransactions() {
         return transactionRepository.findAll().stream()
-                .map(transactionMapper::toDTO)
+                .map(transactionMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public TransactionDTO getTransactionById(Long id) {
+    public TransactionResponse getTransactionById(Long id) {
         return transactionRepository.findById(id)
-                .map(transactionMapper::toDTO)
+                .map(transactionMapper::toResponse)
                 .orElseThrow(() -> new RuntimeException("Transaction not found with id: " + id));
     }
 
-    public List<TransactionDTO> getTransactionsByBuyer(Long buyerId) {
+    public List<TransactionResponse> getTransactionsByBuyer(Long buyerId) {
         User buyer = findUserById(buyerId);
         return transactionRepository.findByBuyer(buyer).stream()
-                .map(transactionMapper::toDTO)
+                .map(transactionMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public List<TransactionDTO> getTransactionsBySeller(Long sellerId) {
+    public List<TransactionResponse> getTransactionsBySeller(Long sellerId) {
         User seller = findUserById(sellerId);
         return transactionRepository.findByProduct_Seller(seller).stream()
-                .map(transactionMapper::toDTO)
+                .map(transactionMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public List<TransactionDTO> getTransactionsBetweenDates(LocalDateTime start, LocalDateTime end) {
+    public List<TransactionResponse> getTransactionsBetweenDates(LocalDateTime start, LocalDateTime end) {
         validateDateRange(start, end);
         return transactionRepository.findByDateBetween(start, end).stream()
-                .map(transactionMapper::toDTO)
+                .map(transactionMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public TransactionDTO createTransaction(TransactionDTO transactionDTO) {
-        validateTransactionAmount(transactionDTO);
+    public TransactionResponse createTransaction(TransactionCreateRequest request) {
+        validateTransactionAmount(request);
 
         try {
-            User buyer = findUserById(transactionDTO.getBuyerId());
-            Product product = findProductById(transactionDTO.getProductId());
+            User buyer = findUserById(request.getBuyerId());
+            Product product = findProductById(request.getProductId());
             
-            Transaction transaction = transactionMapper.toEntity(transactionDTO, buyer, product);
-            
-            if (transaction.getDate() == null) {
-                transaction.setDate(LocalDateTime.now());
-            }
-            
+            Transaction transaction = transactionMapper.createRequestToEntity(request, buyer, product);
             Transaction savedTransaction = transactionRepository.save(transaction);
-            return transactionMapper.toDTO(savedTransaction);
+            
+            return transactionMapper.toResponse(savedTransaction);
         } catch (IllegalArgumentException e) {
             throw e;  // Re-throw validation errors
         } catch (Exception e) {
@@ -94,13 +91,13 @@ public class TransactionService {
         }
     }
 
-    public TransactionDTO updateTransactionStatus(Long id, String newStatus) {
+    public TransactionResponse updateTransactionStatus(Long id, String newStatus) {
         validateTransactionStatus(newStatus);
         
         Transaction transaction = findTransactionById(id);
         transaction.setStatus(newStatus);
         
-        return transactionMapper.toDTO(transactionRepository.save(transaction));
+        return transactionMapper.toResponse(transactionRepository.save(transaction));
     }
 
     public void deleteTransaction(Long id) {
@@ -110,8 +107,8 @@ public class TransactionService {
         transactionRepository.deleteById(id);
     }
     
-    private void validateTransactionAmount(TransactionDTO transactionDTO) {
-        if (transactionDTO.getAmount() == null || transactionDTO.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+    private void validateTransactionAmount(TransactionCreateRequest request) {
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be greater than 0");
         }
     }
@@ -131,7 +128,7 @@ public class TransactionService {
             throw new IllegalArgumentException("Transaction status cannot be empty");
         }
         
-        // Hier zou je kunnen controleren of de status een geldige waarde is
+        // Check if status is valid
         List<String> validStatuses = List.of("PENDING", "PROCESSING", "COMPLETED", "CANCELLED", "REFUNDED");
         if (!validStatuses.contains(status.toUpperCase())) {
             throw new IllegalArgumentException("Invalid transaction status: " + status);

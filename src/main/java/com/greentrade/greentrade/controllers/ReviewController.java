@@ -1,5 +1,6 @@
 package com.greentrade.greentrade.controllers;
 
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +14,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.greentrade.greentrade.dto.ReviewDTO;
+import com.greentrade.greentrade.dto.review.ReviewCreateRequest;
+import com.greentrade.greentrade.dto.review.ReviewResponse;
 import com.greentrade.greentrade.services.ReviewService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,11 +49,11 @@ public class ReviewController {
         @ApiResponse(
             responseCode = "200",
             description = "Reviews successfully retrieved",
-            content = @Content(schema = @Schema(implementation = ReviewDTO.class))
+            content = @Content(schema = @Schema(implementation = ReviewResponse.class))
         )
     })
     @GetMapping
-    public ResponseEntity<List<ReviewDTO>> getAllReviews() {
+    public ResponseEntity<List<ReviewResponse>> getAllReviews() {
         return new ResponseEntity<>(reviewService.getAllReviews(), HttpStatus.OK);
     }
 
@@ -63,10 +66,10 @@ public class ReviewController {
         @ApiResponse(responseCode = "404", description = "Review not found")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<ReviewDTO> getReviewById(
+    public ResponseEntity<ReviewResponse> getReviewById(
             @Parameter(description = "ID of the review", required = true)
             @PathVariable Long id) {
-        ReviewDTO review = reviewService.getReviewById(id);
+        ReviewResponse review = reviewService.getReviewById(id);
         return review != null ? ResponseEntity.ok(review) : ResponseEntity.notFound().build();
     }
 
@@ -79,11 +82,18 @@ public class ReviewController {
         @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PostMapping
-    public ResponseEntity<ReviewDTO> createReview(
+    public ResponseEntity<ReviewResponse> createReview(
             @Parameter(description = "Review data", required = true)
-            @Valid @RequestBody ReviewDTO reviewDTO) {
-        ReviewDTO newReview = reviewService.createReview(reviewDTO);
-        return new ResponseEntity<>(newReview, HttpStatus.CREATED);
+            @Valid @RequestBody ReviewCreateRequest request) {
+        ReviewResponse newReview = reviewService.createReview(request);
+        
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(newReview.getId())
+                .toUri();
+        
+        return ResponseEntity.created(location).body(newReview);
     }
 
     @Operation(
@@ -96,13 +106,13 @@ public class ReviewController {
         @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<ReviewDTO> updateReview(
+    public ResponseEntity<ReviewResponse> updateReview(
             @Parameter(description = "ID of the review", required = true)
             @PathVariable Long id,
             @Parameter(description = "Updated review data", required = true)
-            @Valid @RequestBody ReviewDTO reviewDTO) {
+            @Valid @RequestBody ReviewCreateRequest request) {
         try {
-            ReviewDTO updatedReview = reviewService.updateReview(id, reviewDTO);
+            ReviewResponse updatedReview = reviewService.updateReview(id, request);
             return ResponseEntity.ok(updatedReview);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -138,11 +148,11 @@ public class ReviewController {
         @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @GetMapping("/product/{productId}")
-    public ResponseEntity<List<ReviewDTO>> getReviewsForProduct(
+    public ResponseEntity<List<ReviewResponse>> getReviewsForProduct(
             @Parameter(description = "ID of the product", required = true)
             @PathVariable Long productId) {
         try {
-            List<ReviewDTO> reviews = reviewService.getReviewsForProduct(productId);
+            List<ReviewResponse> reviews = reviewService.getReviewsForProduct(productId);
             return ResponseEntity.ok(reviews);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();

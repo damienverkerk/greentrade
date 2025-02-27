@@ -16,8 +16,10 @@ import com.greentrade.greentrade.exception.file.InvalidFileException;
 import com.greentrade.greentrade.exception.product.InvalidProductDataException;
 import com.greentrade.greentrade.exception.product.ProductNotFoundException;
 import com.greentrade.greentrade.exception.security.InvalidCredentialsException;
+import com.greentrade.greentrade.exception.security.SecurityException;
 import com.greentrade.greentrade.exception.security.UserNotFoundException;
 import com.greentrade.greentrade.exception.verification.DuplicateVerificationException;
+import com.greentrade.greentrade.exception.verification.InvalidVerificationStatusException;
 import com.greentrade.greentrade.exception.verification.ProductVerificationException;
 import com.greentrade.greentrade.exception.verification.VerificationNotFoundException;
 
@@ -35,7 +37,7 @@ public class ValidationExceptionHandler {
         
         ValidationErrorResponse response = new ValidationErrorResponse(
             HttpStatus.BAD_REQUEST.value(),
-            "Validatie fout",
+            "Validation error",
             LocalDateTime.now(),
             errors
         );
@@ -104,6 +106,16 @@ public class ValidationExceptionHandler {
         );
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
+    
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ErrorResponse> handleSecurityException(SecurityException ex) {
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            ex.getMessage(),
+            LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
 
     // Verification exceptions
     @ExceptionHandler(ProductVerificationException.class)
@@ -115,11 +127,21 @@ public class ValidationExceptionHandler {
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
+    
+    @ExceptionHandler(InvalidVerificationStatusException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidVerificationStatusException(InvalidVerificationStatusException ex) {
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            ex.getMessage(),
+            LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
 
     @ExceptionHandler(DuplicateVerificationException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateVerificationException(DuplicateVerificationException ex) {
         ErrorResponse error = new ErrorResponse(
-            HttpStatus.CONFLICT.value(),  // Gebruik 409 CONFLICT i.p.v. 400 BAD_REQUEST
+            HttpStatus.CONFLICT.value(),  // Use 409 CONFLICT instead of 400 BAD_REQUEST
             ex.getMessage(),
             LocalDateTime.now()
         );
@@ -136,12 +158,12 @@ public class ValidationExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
-    // General exception handler voor onverwachte fouten
+    // General exception handler for unexpected errors
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
         ErrorResponse error = new ErrorResponse(
             HttpStatus.INTERNAL_SERVER_ERROR.value(),
-            "Er is een onverwachte fout opgetreden",
+            "An unexpected error occurred",
             LocalDateTime.now()
         );
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);

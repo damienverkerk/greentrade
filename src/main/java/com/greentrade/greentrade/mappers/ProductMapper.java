@@ -1,43 +1,60 @@
 package com.greentrade.greentrade.mappers;
 
-import com.greentrade.greentrade.dto.ProductDTO;
+import org.springframework.stereotype.Component;
+
+import com.greentrade.greentrade.dto.product.ProductCreateRequest;
+import com.greentrade.greentrade.dto.product.ProductResponse;
+import com.greentrade.greentrade.dto.product.ProductUpdateRequest;
 import com.greentrade.greentrade.models.Product;
 import com.greentrade.greentrade.models.User;
-import org.springframework.stereotype.Component;
 
 @Component
 public class ProductMapper {
     
-    public ProductDTO toDTO(Product product) {
+    public ProductResponse toResponse(Product product) {
         if (product == null) {
             return null;
         }
         
-        return new ProductDTO(
-                product.getId(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getSustainabilityScore(),
-                product.getSustainabilityCertificate(),
-                product.getSeller() != null ? product.getSeller().getId() : null
-        );
+        return ProductResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .sustainabilityScore(product.getSustainabilityScore())
+                .sustainabilityCertificate(product.getSustainabilityCertificate())
+                .sellerId(product.getSeller() != null ? product.getSeller().getId() : null)
+                .build();
     }
     
-    public Product toEntity(ProductDTO dto, User seller) {
-        if (dto == null) {
+    public Product createRequestToEntity(ProductCreateRequest request, User seller) {
+        if (request == null) {
             return null;
         }
         
         Product product = new Product();
-        product.setId(dto.getId());
-        product.setName(dto.getName());
-        product.setDescription(dto.getDescription());
-        product.setPrice(dto.getPrice());
-        product.setSustainabilityScore(dto.getSustainabilityScore());
-        product.setSustainabilityCertificate(dto.getSustainabilityCertificate());
+        product.setName(request.getName());
+        product.setDescription(request.getDescription());
+        product.setPrice(request.getPrice());
+        product.setSustainabilityScore(request.getSustainabilityScore());
+        product.setSustainabilityCertificate(request.getSustainabilityCertificate());
         product.setSeller(seller);
         
         return product;
+    }
+    
+    public void updateEntityFromRequest(Product product, ProductUpdateRequest request, User seller) {
+        if (request == null || product == null) {
+            return;
+        }
+        
+        product.setName(request.getName());
+        product.setDescription(request.getDescription());
+        product.setPrice(request.getPrice());
+        product.setSustainabilityScore(request.getSustainabilityScore());
+        product.setSustainabilityCertificate(request.getSustainabilityCertificate());
+        if (seller != null) {
+            product.setSeller(seller);
+        }
     }
 }

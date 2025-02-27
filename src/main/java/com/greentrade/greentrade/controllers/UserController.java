@@ -1,12 +1,18 @@
 package com.greentrade.greentrade.controllers;
 
-import com.greentrade.greentrade.dto.UserDTO;
-import com.greentrade.greentrade.services.UserService;
+import java.net.URI;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.List;
+import com.greentrade.greentrade.dto.user.UserCreateRequest;
+import com.greentrade.greentrade.dto.user.UserResponse;
+import com.greentrade.greentrade.services.UserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/users")
@@ -20,25 +26,33 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
-        UserDTO userDTO = userService.getUserById(id);
-        return userDTO != null ? ResponseEntity.ok(userDTO) : ResponseEntity.notFound().build();
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
+        UserResponse userDTO = userService.getUserById(id);
+        return ResponseEntity.ok(userDTO);
     }
 
     @PostMapping
-    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
-        return ResponseEntity.ok(userService.createUser(userDTO));
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserCreateRequest userRequest) {
+        UserResponse createdUser = userService.createUser(userRequest);
+        
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(createdUser.getId())
+                .toUri();
+        
+        return ResponseEntity.created(location).body(createdUser);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
-        UserDTO updatedUser = userService.updateUser(id, userDTO);
-        return updatedUser != null ? ResponseEntity.ok(updatedUser) : ResponseEntity.notFound().build();
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @Valid @RequestBody UserCreateRequest userRequest) {
+        UserResponse updatedUser = userService.updateUser(id, userRequest);
+        return ResponseEntity.ok(updatedUser);
     }
 
     @DeleteMapping("/{id}")

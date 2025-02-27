@@ -1,46 +1,45 @@
 package com.greentrade.greentrade.mappers;
 
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Component;
 
-import com.greentrade.greentrade.dto.MessageDTO;
+import com.greentrade.greentrade.dto.message.MessageCreateRequest;
+import com.greentrade.greentrade.dto.message.MessageResponse;
 import com.greentrade.greentrade.models.Message;
 import com.greentrade.greentrade.models.User;
 
 @Component
 public class MessageMapper {
     
-    public MessageDTO toDTO(Message message) {
+    public MessageResponse toResponse(Message message) {
         if (message == null) {
             return null;
         }
         
-        return new MessageDTO(
-                message.getId(),
-                message.getSender().getId(),
-                message.getReceiver().getId(),
-                message.getSubject(),
-                message.getContent(),
-                message.getTimestamp(),
-                message.isRead()
-        );
+        return MessageResponse.builder()
+                .id(message.getId())
+                .senderId(message.getSender().getId())
+                .receiverId(message.getReceiver().getId())
+                .subject(message.getSubject())
+                .content(message.getContent())
+                .timestamp(message.getTimestamp())
+                .read(message.isRead())
+                .build();
     }
     
-    public Message toEntity(MessageDTO dto, User sender, User receiver) {
-        if (dto == null) {
+    public Message createRequestToEntity(MessageCreateRequest request, User sender, User receiver) {
+        if (request == null) {
             return null;
         }
         
         Message message = new Message();
-        if (dto.getId() != null) {
-            message.setId(dto.getId());
-        }
-        
         message.setSender(sender);
         message.setReceiver(receiver);
-        message.setSubject(dto.getSubject());
-        message.setContent(dto.getContent());
-        message.setTimestamp(dto.getTimestamp());
-        message.setRead(dto.isRead());
+        message.setSubject(request.getSubject());
+        message.setContent(request.getContent());
+        message.setTimestamp(LocalDateTime.now());
+        message.setRead(false);
         
         return message;
     }

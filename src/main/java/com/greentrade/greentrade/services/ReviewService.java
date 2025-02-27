@@ -6,7 +6,8 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.greentrade.greentrade.dto.ReviewDTO;
+import com.greentrade.greentrade.dto.review.ReviewCreateRequest;
+import com.greentrade.greentrade.dto.review.ReviewResponse;
 import com.greentrade.greentrade.exception.product.ProductNotFoundException;
 import com.greentrade.greentrade.exception.security.UserNotFoundException;
 import com.greentrade.greentrade.mappers.ReviewMapper;
@@ -37,22 +38,22 @@ public class ReviewService {
         this.reviewMapper = reviewMapper;
     }
 
-    public List<ReviewDTO> getAllReviews() {
+    public List<ReviewResponse> getAllReviews() {
         return reviewRepository.findAll().stream()
-                .map(reviewMapper::toDTO)
+                .map(reviewMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public ReviewDTO getReviewById(Long id) {
+    public ReviewResponse getReviewById(Long id) {
         return reviewRepository.findById(id)
-                .map(reviewMapper::toDTO)
+                .map(reviewMapper::toResponse)
                 .orElseThrow(() -> new RuntimeException("Review not found with id: " + id));
     }
 
-    public List<ReviewDTO> getReviewsForProduct(Long productId) {
+    public List<ReviewResponse> getReviewsForProduct(Long productId) {
         Product product = findProductById(productId);
         return reviewRepository.findByProduct(product).stream()
-                .map(reviewMapper::toDTO)
+                .map(reviewMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -61,27 +62,34 @@ public class ReviewService {
         return reviewRepository.averageScoreByProduct(product);
     }
 
-    public ReviewDTO createReview(ReviewDTO reviewDTO) {
-        validateReviewData(reviewDTO);
+    public ReviewResponse createReview(ReviewCreateRequest request) {
+        validateReviewData(request);
         
-        Product product = findProductById(reviewDTO.getProductId());
-        User reviewer = findUserById(reviewDTO.getReviewerId());
+        Product product = findProductById(request.getProductId());
+        User reviewer = findUserById(request.getReviewerId());
         
-        Review review = reviewMapper.toEntity(reviewDTO, product, reviewer);
+        Review review = reviewMapper.createRequestToEntity(request, product, reviewer);
         Review savedReview = reviewRepository.save(review);
         
-        return reviewMapper.toDTO(savedReview);
+        return reviewMapper.toResponse(savedReview);
     }
 
-    public ReviewDTO updateReview(Long id, ReviewDTO reviewDTO) {
-        validateReviewData(reviewDTO);
+    public ReviewResponse updateReview(Long id, ReviewCreateRequest request) {
+        validateReviewData(request);
         
         Review review = findReviewById(id);
         
-        updateReviewFields(review, reviewDTO);
+        Product product = findProductById(request.getProductId());
+        User reviewer = findUserById(request.getReviewerId());
+        
+        review.setProduct(product);
+        review.setReviewer(reviewer);
+        review.setScore(request.getScore());
+        review.setComment(request.getComment());
+        
         Review updatedReview = reviewRepository.save(review);
         
-        return reviewMapper.toDTO(updatedReview);
+        return reviewMapper.toResponse(updatedReview);
     }
 
     public void deleteReview(Long id) {
@@ -106,14 +114,9 @@ public class ReviewService {
                 .orElseThrow(() -> new RuntimeException("Review not found with id: " + id));
     }
     
-    private void validateReviewData(ReviewDTO reviewDTO) {
-        if (reviewDTO.getScore() < 1 || reviewDTO.getScore() > 5) {
+    private void validateReviewData(ReviewCreateRequest request) {
+        if (request.getScore() < 1 || request.getScore() > 5) {
             throw new IllegalArgumentException("Review score must be between 1 and 5");
         }
-    }
-    
-    private void updateReviewFields(Review review, ReviewDTO reviewDTO) {
-        review.setScore(reviewDTO.getScore());
-        review.setComment(reviewDTO.getComment());
     }
 }

@@ -1,3 +1,4 @@
+-- src/main/resources/data.sql
 -- First, insert certificates
 INSERT INTO certificates (id, name, issuer, issue_date, expiry_date, description, file_path) VALUES
 (1, 'ISO 14001', 'Bureau Veritas', '2024-01-01', '2025-01-01', 'Environmental management system certificate', 'iso14001.pdf'),

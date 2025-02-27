@@ -1,5 +1,6 @@
 package com.greentrade.greentrade.controllers;
 
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -11,8 +12,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.greentrade.greentrade.dto.ProductVerificationDTO;
+import com.greentrade.greentrade.dto.verification.VerificationResponse;
+import com.greentrade.greentrade.dto.verification.VerificationReviewRequest;
 import com.greentrade.greentrade.exception.product.ProductNotFoundException;
 import com.greentrade.greentrade.exception.verification.DuplicateVerificationException;
 import com.greentrade.greentrade.services.ProductVerificationService;
@@ -42,15 +45,24 @@ public class ProductVerificationController {
     @ApiResponse(responseCode = "404", description = "Product not found")
     @PostMapping("/products/{productId}/submit")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ProductVerificationDTO> submitForVerification(@PathVariable Long productId) {
+    public ResponseEntity<VerificationResponse> submitForVerification(@PathVariable Long productId) {
         try {
-            return ResponseEntity.ok(verificationService.submitForVerification(productId));
+            VerificationResponse verification = verificationService.submitForVerification(productId);
+            
+            URI location = ServletUriComponentsBuilder
+                    .fromCurrentRequest()
+                    .replacePath("/api/verifications/{id}")
+                    .buildAndExpand(verification.getId())
+                    .toUri();
+            
+            return ResponseEntity.created(location).body(verification);
         } catch (ProductNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (DuplicateVerificationException e) {
             throw e;  // Let this be handled by the global exception handler
         }
     }
+    
     @Operation(
         summary = "Review product verification",
         description = "Administrators can review submitted products"
@@ -60,11 +72,11 @@ public class ProductVerificationController {
     @ApiResponse(responseCode = "404", description = "Verification not found")
     @PostMapping("/{verificationId}/review")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProductVerificationDTO> reviewProduct(
+    public ResponseEntity<VerificationResponse> reviewProduct(
             @Parameter(description = "ID of the verification", required = true)
             @PathVariable Long verificationId,
             @Parameter(description = "Review data", required = true)
-            @Valid @RequestBody ProductVerificationDTO dto,
+            @Valid @RequestBody VerificationReviewRequest dto,
             @Parameter(description = "ID of the reviewer", required = true)
             @RequestParam Long reviewerId) {
         return ResponseEntity.ok(verificationService.reviewProduct(verificationId, dto, reviewerId));
@@ -77,7 +89,7 @@ public class ProductVerificationController {
     @ApiResponse(responseCode = "200", description = "Pending verifications successfully retrieved")
     @GetMapping("/pending")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ProductVerificationDTO>> getPendingVerifications() {
+    public ResponseEntity<List<VerificationResponse>> getPendingVerifications() {
         return ResponseEntity.ok(verificationService.getPendingVerifications());
     }
 
@@ -88,7 +100,7 @@ public class ProductVerificationController {
     @ApiResponse(responseCode = "200", description = "Verifications successfully retrieved")
     @GetMapping("/products/{productId}")
     @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
-    public ResponseEntity<List<ProductVerificationDTO>> getVerificationsByProduct(
+    public ResponseEntity<List<VerificationResponse>> getVerificationsByProduct(
             @Parameter(description = "ID of the product", required = true)
             @PathVariable Long productId) {
         return ResponseEntity.ok(verificationService.getVerificationsByProduct(productId));

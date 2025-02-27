@@ -1,5 +1,6 @@
 package com.greentrade.greentrade.controllers;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,8 +18,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.greentrade.greentrade.dto.TransactionDTO;
+import com.greentrade.greentrade.dto.transaction.TransactionCreateRequest;
+import com.greentrade.greentrade.dto.transaction.TransactionResponse;
 import com.greentrade.greentrade.services.TransactionService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +31,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -49,11 +53,11 @@ public class TransactionController {
         @ApiResponse(
             responseCode = "200",
             description = "Transactions successfully retrieved",
-            content = @Content(schema = @Schema(implementation = TransactionDTO.class))
+            content = @Content(schema = @Schema(implementation = TransactionResponse.class))
         )
     })
     @GetMapping
-    public ResponseEntity<List<TransactionDTO>> getAllTransactions() {
+    public ResponseEntity<List<TransactionResponse>> getAllTransactions() {
         return new ResponseEntity<>(transactionService.getAllTransactions(), HttpStatus.OK);
     }
 
@@ -66,10 +70,10 @@ public class TransactionController {
         @ApiResponse(responseCode = "404", description = "Transaction not found")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<TransactionDTO> getTransactionById(
+    public ResponseEntity<TransactionResponse> getTransactionById(
             @Parameter(description = "ID of the transaction", required = true)
             @PathVariable Long id) {
-        TransactionDTO transaction = transactionService.getTransactionById(id);
+        TransactionResponse transaction = transactionService.getTransactionById(id);
         return transaction != null ? new ResponseEntity<>(transaction, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
@@ -82,12 +86,19 @@ public class TransactionController {
         @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PostMapping
-    public ResponseEntity<TransactionDTO> createTransaction(
+    public ResponseEntity<TransactionResponse> createTransaction(
         @Parameter(description = "Transaction data", required = true)
-        @RequestBody TransactionDTO transactionDTO) {
+        @Valid @RequestBody TransactionCreateRequest request) {
         try {
-            TransactionDTO newTransaction = transactionService.createTransaction(transactionDTO);
-            return new ResponseEntity<>(newTransaction, HttpStatus.CREATED);
+            TransactionResponse newTransaction = transactionService.createTransaction(request);
+            
+            URI location = ServletUriComponentsBuilder
+                    .fromCurrentRequest()
+                    .path("/{id}")
+                    .buildAndExpand(newTransaction.getId())
+                    .toUri();
+            
+            return ResponseEntity.created(location).body(newTransaction);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
@@ -104,13 +115,13 @@ public class TransactionController {
         @ApiResponse(responseCode = "404", description = "Transaction not found")
     })
     @PutMapping("/{id}/status")
-    public ResponseEntity<TransactionDTO> updateTransactionStatus(
+    public ResponseEntity<TransactionResponse> updateTransactionStatus(
             @Parameter(description = "ID of the transaction", required = true)
             @PathVariable Long id,
             @Parameter(description = "New status of the transaction", required = true)
             @RequestParam String newStatus) {
         try {
-            TransactionDTO updatedTransaction = transactionService.updateTransactionStatus(id, newStatus);
+            TransactionResponse updatedTransaction = transactionService.updateTransactionStatus(id, newStatus);
             return new ResponseEntity<>(updatedTransaction, HttpStatus.OK);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -147,10 +158,10 @@ public class TransactionController {
     })
     @GetMapping("/buyer/{buyerId}")
     @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<List<TransactionDTO>> getTransactionsByBuyer(
+    public ResponseEntity<List<TransactionResponse>> getTransactionsByBuyer(
             @Parameter(description = "ID of the buyer", required = true)
             @PathVariable Long buyerId) {
-        List<TransactionDTO> transactions = transactionService.getTransactionsByBuyer(buyerId);
+        List<TransactionResponse> transactions = transactionService.getTransactionsByBuyer(buyerId);
         return new ResponseEntity<>(transactions, HttpStatus.OK);
     }
 
@@ -163,10 +174,10 @@ public class TransactionController {
         @ApiResponse(responseCode = "404", description = "Seller not found")
     })
     @GetMapping("/seller/{sellerId}")
-    public ResponseEntity<List<TransactionDTO>> getTransactionsBySeller(
+    public ResponseEntity<List<TransactionResponse>> getTransactionsBySeller(
             @Parameter(description = "ID of the seller", required = true)
             @PathVariable Long sellerId) {
-        List<TransactionDTO> transactions = transactionService.getTransactionsBySeller(sellerId);
+        List<TransactionResponse> transactions = transactionService.getTransactionsBySeller(sellerId);
         return new ResponseEntity<>(transactions, HttpStatus.OK);
     }
 
@@ -178,12 +189,12 @@ public class TransactionController {
         @ApiResponse(responseCode = "200", description = "Transactions successfully retrieved")
     })
     @GetMapping("/period")
-    public ResponseEntity<List<TransactionDTO>> getTransactionsBetweenDates(
+    public ResponseEntity<List<TransactionResponse>> getTransactionsBetweenDates(
             @Parameter(description = "Start date and time (ISO format)", required = true, example = "2024-01-01T00:00:00")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @Parameter(description = "End date and time (ISO format)", required = true, example = "2024-12-31T23:59:59")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-        List<TransactionDTO> transactions = transactionService.getTransactionsBetweenDates(start, end);
+        List<TransactionResponse> transactions = transactionService.getTransactionsBetweenDates(start, end);
         return new ResponseEntity<>(transactions, HttpStatus.OK);
     }
 }

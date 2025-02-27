@@ -7,9 +7,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.greentrade.greentrade.dto.AuthRequest;
-import com.greentrade.greentrade.dto.AuthResponse;
-import com.greentrade.greentrade.dto.RegisterRequest;
+import com.greentrade.greentrade.dto.auth.AuthResponse;
+import com.greentrade.greentrade.dto.auth.LoginRequest;
+import com.greentrade.greentrade.dto.auth.RegisterRequest;
 import com.greentrade.greentrade.exception.security.InvalidCredentialsException;
 import com.greentrade.greentrade.exception.security.SecurityException;
 import com.greentrade.greentrade.exception.security.UserNotFoundException;
@@ -36,19 +36,19 @@ public class AuthenticationService {
         var savedUser = userRepository.save(user);
         var jwtToken = jwtService.generateToken(savedUser);
         
-        return createAuthResponse(jwtToken);
+        return createAuthResponse(jwtToken, savedUser);
     }
 
-    public AuthResponse authenticate(AuthRequest request) {
+    public AuthResponse authenticate(LoginRequest request) {
         try {
-            authenticateUser(request.getEmail(), request.getWachtwoord());
+            authenticateUser(request.getEmail(), request.getPassword());
             
             var user = findUserByEmail(request.getEmail());
             var jwtToken = jwtService.generateToken(user);
             
-            return createAuthResponse(jwtToken);
+            return createAuthResponse(jwtToken, user);
         } catch (DisabledException e) {
-            throw new SecurityException("Account is gedeactiveerd");
+            throw new SecurityException("Account is disabled");
         } catch (BadCredentialsException e) {
             throw new InvalidCredentialsException();
         }
@@ -56,13 +56,13 @@ public class AuthenticationService {
     
     private void validateEmailAvailability(String email) {
         if (userRepository.existsByEmail(email)) {
-            throw new SecurityException("Email is al in gebruik");
+            throw new SecurityException("Email is already in use");
         }
     }
 
     private void validatePassword(String password) {
         if (password == null || password.length() < 8) {
-            throw new SecurityException("Wachtwoord moet minimaal 8 karakters lang zijn");
+            throw new SecurityException("Password must be at least 8 characters long");
         }
         
         boolean hasLetter = password.matches(".*[a-zA-Z].*");
@@ -71,7 +71,7 @@ public class AuthenticationService {
         
         if (!hasLetter || !hasDigit || !hasSpecial) {
             throw new SecurityException(
-                "Wachtwoord moet minimaal één letter, één cijfer en één speciaal karakter bevatten"
+                "Password must contain at least one letter, one number, and one special character"
             );
         }
     }
@@ -82,7 +82,7 @@ public class AuthenticationService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.valueOf(request.getRole()))
-                .verificationStatus(true)  // Standaard op true
+                .verificationStatus(true)  // Default to true
                 .build();
     }
     
@@ -100,9 +100,11 @@ public class AuthenticationService {
                 .orElseThrow(() -> new UserNotFoundException(email));
     }
     
-    private AuthResponse createAuthResponse(String token) {
+    private AuthResponse createAuthResponse(String token, User user) {
         return AuthResponse.builder()
                 .token(token)
+                .role(user.getRole().toString())
+                .email(user.getEmail())
                 .build();
     }
 }

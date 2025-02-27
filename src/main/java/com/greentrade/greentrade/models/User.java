@@ -22,33 +22,33 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String naam;
+    private String name;  
 
     @Column(unique = true)
     private String email;
 
-    private String wachtwoord;
+    private String password;  
 
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    private boolean verificatieStatus;
+    private boolean verificationStatus;  
 
     @OneToOne
     @JoinColumn(name = "certificate_id")
     private Certificate certificate;
 
-    @OneToMany(mappedBy = "verkoper", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL)  
     @Builder.Default
-    private List<Product> producten = new ArrayList<>();
+    private List<Product> products = new ArrayList<>();  
 
-    @OneToMany(mappedBy = "afzender", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL)  
     @Builder.Default
-    private List<Message> verzondenBerichten = new ArrayList<>();
+    private List<Message> sentMessages = new ArrayList<>();  
 
-    @OneToMany(mappedBy = "ontvanger", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL)  
     @Builder.Default
-    private List<Message> ontvangenBerichten = new ArrayList<>();
+    private List<Message> receivedMessages = new ArrayList<>();  
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -57,7 +57,7 @@ public class User implements UserDetails {
 
     @Override
     public String getPassword() {
-        return wachtwoord;
+        return password;
     }
 
     @Override
@@ -82,6 +82,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return verificatieStatus;
+        return verificationStatus;
     }
 }

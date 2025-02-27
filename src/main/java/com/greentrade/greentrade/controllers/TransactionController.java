@@ -30,8 +30,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/api/transacties")
-@Tag(name = "Transacties", description = "API endpoints voor transactie management")
+@RequestMapping("/api/transactions")
+@Tag(name = "Transactions", description = "API endpoints for transaction management")
 public class TransactionController {
 
     private final TransactionService transactionService;
@@ -42,52 +42,52 @@ public class TransactionController {
     }
 
     @Operation(
-        summary = "Haal alle transacties op",
-        description = "Haalt een lijst van alle transacties op in het systeem"
+        summary = "Get all transactions",
+        description = "Retrieves a list of all transactions in the system"
     )
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "Transacties succesvol opgehaald",
+            description = "Transactions successfully retrieved",
             content = @Content(schema = @Schema(implementation = TransactionDTO.class))
         )
     })
     @GetMapping
-    public ResponseEntity<List<TransactionDTO>> getAlleTransacties() {
-        return new ResponseEntity<>(transactionService.getAlleTransacties(), HttpStatus.OK);
+    public ResponseEntity<List<TransactionDTO>> getAllTransactions() {
+        return new ResponseEntity<>(transactionService.getAllTransactions(), HttpStatus.OK);
     }
 
     @Operation(
-        summary = "Haal een specifieke transactie op",
-        description = "Haalt een specifieke transactie op basis van het ID"
+        summary = "Get a specific transaction",
+        description = "Retrieves a specific transaction based on its ID"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Transactie succesvol gevonden"),
-        @ApiResponse(responseCode = "404", description = "Transactie niet gevonden")
+        @ApiResponse(responseCode = "200", description = "Transaction successfully found"),
+        @ApiResponse(responseCode = "404", description = "Transaction not found")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<TransactionDTO> getTransactieById(
-            @Parameter(description = "ID van de transactie", required = true)
+    public ResponseEntity<TransactionDTO> getTransactionById(
+            @Parameter(description = "ID of the transaction", required = true)
             @PathVariable Long id) {
-        TransactionDTO transactie = transactionService.getTransactieById(id);
-        return transactie != null ? new ResponseEntity<>(transactie, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        TransactionDTO transaction = transactionService.getTransactionById(id);
+        return transaction != null ? new ResponseEntity<>(transaction, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @Operation(
-        summary = "Maak een nieuwe transactie aan",
-        description = "Maakt een nieuwe transactie aan in het systeem"
+        summary = "Create a new transaction",
+        description = "Creates a new transaction in the system"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Transactie succesvol aangemaakt"),
-        @ApiResponse(responseCode = "400", description = "Ongeldige invoergegevens")
+        @ApiResponse(responseCode = "201", description = "Transaction successfully created"),
+        @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PostMapping
-    public ResponseEntity<TransactionDTO> maakTransactie(
-        @Parameter(description = "Transactie gegevens", required = true)
-        @RequestBody TransactionDTO transactieDTO) {
+    public ResponseEntity<TransactionDTO> createTransaction(
+        @Parameter(description = "Transaction data", required = true)
+        @RequestBody TransactionDTO transactionDTO) {
         try {
-            TransactionDTO nieuweTransactie = transactionService.maakTransactie(transactieDTO);
-            return new ResponseEntity<>(nieuweTransactie, HttpStatus.CREATED);
+            TransactionDTO newTransaction = transactionService.createTransaction(transactionDTO);
+            return new ResponseEntity<>(newTransaction, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
@@ -96,41 +96,41 @@ public class TransactionController {
     }
 
     @Operation(
-        summary = "Update de status van een transactie",
-        description = "Werkt de status van een bestaande transactie bij"
+        summary = "Update the status of a transaction",
+        description = "Updates the status of an existing transaction"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Status succesvol bijgewerkt"),
-        @ApiResponse(responseCode = "404", description = "Transactie niet gevonden")
+        @ApiResponse(responseCode = "200", description = "Status successfully updated"),
+        @ApiResponse(responseCode = "404", description = "Transaction not found")
     })
     @PutMapping("/{id}/status")
-    public ResponseEntity<TransactionDTO> updateTransactieStatus(
-            @Parameter(description = "ID van de transactie", required = true)
+    public ResponseEntity<TransactionDTO> updateTransactionStatus(
+            @Parameter(description = "ID of the transaction", required = true)
             @PathVariable Long id,
-            @Parameter(description = "Nieuwe status van de transactie", required = true)
-            @RequestParam String nieuweStatus) {
+            @Parameter(description = "New status of the transaction", required = true)
+            @RequestParam String newStatus) {
         try {
-            TransactionDTO updatedTransactie = transactionService.updateTransactieStatus(id, nieuweStatus);
-            return new ResponseEntity<>(updatedTransactie, HttpStatus.OK);
+            TransactionDTO updatedTransaction = transactionService.updateTransactionStatus(id, newStatus);
+            return new ResponseEntity<>(updatedTransaction, HttpStatus.OK);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
     @Operation(
-        summary = "Verwijder een transactie",
-        description = "Verwijdert een transactie uit het systeem"
+        summary = "Delete a transaction",
+        description = "Deletes a transaction from the system"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Transactie succesvol verwijderd"),
-        @ApiResponse(responseCode = "404", description = "Transactie niet gevonden")
+        @ApiResponse(responseCode = "204", description = "Transaction successfully deleted"),
+        @ApiResponse(responseCode = "404", description = "Transaction not found")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> verwijderTransactie(
-            @Parameter(description = "ID van de transactie", required = true)
+    public ResponseEntity<Void> deleteTransaction(
+            @Parameter(description = "ID of the transaction", required = true)
             @PathVariable Long id) {
         try {
-            transactionService.verwijderTransactie(id);
+            transactionService.deleteTransaction(id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -138,52 +138,52 @@ public class TransactionController {
     }
 
     @Operation(
-        summary = "Haal transacties van een koper op",
-        description = "Haalt alle transacties op die zijn uitgevoerd door een specifieke koper"
+        summary = "Get transactions for a buyer",
+        description = "Retrieves all transactions made by a specific buyer"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Transacties succesvol opgehaald"),
-        @ApiResponse(responseCode = "404", description = "Koper niet gevonden")
+        @ApiResponse(responseCode = "200", description = "Transactions successfully retrieved"),
+        @ApiResponse(responseCode = "404", description = "Buyer not found")
     })
-    @GetMapping("/koper/{koperId}")
-    @PreAuthorize("hasRole('KOPER')")
-    public ResponseEntity<List<TransactionDTO>> getTransactiesDoorKoper(
-            @Parameter(description = "ID van de koper", required = true)
-            @PathVariable Long koperId) {
-        List<TransactionDTO> transacties = transactionService.getTransactiesDoorKoper(koperId);
-        return new ResponseEntity<>(transacties, HttpStatus.OK);
+    @GetMapping("/buyer/{buyerId}")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<List<TransactionDTO>> getTransactionsByBuyer(
+            @Parameter(description = "ID of the buyer", required = true)
+            @PathVariable Long buyerId) {
+        List<TransactionDTO> transactions = transactionService.getTransactionsByBuyer(buyerId);
+        return new ResponseEntity<>(transactions, HttpStatus.OK);
     }
 
     @Operation(
-        summary = "Haal transacties van een verkoper op",
-        description = "Haalt alle transacties op die zijn uitgevoerd door een specifieke verkoper"
+        summary = "Get transactions for a seller",
+        description = "Retrieves all transactions made by a specific seller"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Transacties succesvol opgehaald"),
-        @ApiResponse(responseCode = "404", description = "Verkoper niet gevonden")
+        @ApiResponse(responseCode = "200", description = "Transactions successfully retrieved"),
+        @ApiResponse(responseCode = "404", description = "Seller not found")
     })
-    @GetMapping("/verkoper/{verkoperId}")
-    public ResponseEntity<List<TransactionDTO>> getTransactiesDoorVerkoper(
-            @Parameter(description = "ID van de verkoper", required = true)
-            @PathVariable Long verkoperId) {
-        List<TransactionDTO> transacties = transactionService.getTransactiesDoorVerkoper(verkoperId);
-        return new ResponseEntity<>(transacties, HttpStatus.OK);
+    @GetMapping("/seller/{sellerId}")
+    public ResponseEntity<List<TransactionDTO>> getTransactionsBySeller(
+            @Parameter(description = "ID of the seller", required = true)
+            @PathVariable Long sellerId) {
+        List<TransactionDTO> transactions = transactionService.getTransactionsBySeller(sellerId);
+        return new ResponseEntity<>(transactions, HttpStatus.OK);
     }
 
     @Operation(
-        summary = "Haal transacties op voor een periode",
-        description = "Haalt alle transacties op tussen twee opgegeven datums"
+        summary = "Get transactions for a period",
+        description = "Retrieves all transactions between two specified dates"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Transacties succesvol opgehaald")
+        @ApiResponse(responseCode = "200", description = "Transactions successfully retrieved")
     })
-    @GetMapping("/periode")
-    public ResponseEntity<List<TransactionDTO>> getTransactiesTussenData(
-            @Parameter(description = "Startdatum en tijd (ISO format)", required = true, example = "2024-01-01T00:00:00")
+    @GetMapping("/period")
+    public ResponseEntity<List<TransactionDTO>> getTransactionsBetweenDates(
+            @Parameter(description = "Start date and time (ISO format)", required = true, example = "2024-01-01T00:00:00")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
-            @Parameter(description = "Einddatum en tijd (ISO format)", required = true, example = "2024-12-31T23:59:59")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime eind) {
-        List<TransactionDTO> transacties = transactionService.getTransactiesTussenData(start, eind);
-        return new ResponseEntity<>(transacties, HttpStatus.OK);
+            @Parameter(description = "End date and time (ISO format)", required = true, example = "2024-12-31T23:59:59")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+        List<TransactionDTO> transactions = transactionService.getTransactionsBetweenDates(start, end);
+        return new ResponseEntity<>(transactions, HttpStatus.OK);
     }
 }

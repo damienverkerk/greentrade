@@ -5,21 +5,21 @@ import java.time.LocalDateTime;
 public class ReviewDTO {
     private Long id;
     private Long productId;
-    private Long recensentId;
+    private Long reviewerId;
     private int score;
-    private String commentaar;
-    private LocalDateTime datum;
+    private String comment;
+    private LocalDateTime date;
 
     // Constructors
     public ReviewDTO() {}
 
-    public ReviewDTO(Long id, Long productId, Long recensentId, int score, String commentaar, LocalDateTime datum) {
+    public ReviewDTO(Long id, Long productId, Long reviewerId, int score, String comment, LocalDateTime date) {
         this.id = id;
         this.productId = productId;
-        this.recensentId = recensentId;
+        this.reviewerId = reviewerId;
         this.score = score;
-        this.commentaar = commentaar;
-        this.datum = datum;
+        this.comment = comment;
+        this.date = date;
     }
 
     // Getters and Setters
@@ -39,12 +39,12 @@ public class ReviewDTO {
         this.productId = productId;
     }
 
-    public Long getRecensentId() {
-        return recensentId;
+    public Long getReviewerId() {
+        return reviewerId;
     }
 
-    public void setRecensentId(Long recensentId) {
-        this.recensentId = recensentId;
+    public void setReviewerId(Long reviewerId) {
+        this.reviewerId = reviewerId;
     }
 
     public int getScore() {
@@ -55,19 +55,19 @@ public class ReviewDTO {
         this.score = score;
     }
 
-    public String getCommentaar() {
-        return commentaar;
+    public String getComment() {
+        return comment;
     }
 
-    public void setCommentaar(String commentaar) {
-        this.commentaar = commentaar;
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 
-    public LocalDateTime getDatum() {
-        return datum;
+    public LocalDateTime getDate() {
+        return date;
     }
 
-    public void setDatum(LocalDateTime datum) {
-        this.datum = datum;
+    public void setDate(LocalDateTime date) {
+        this.date = date;
     }
 }

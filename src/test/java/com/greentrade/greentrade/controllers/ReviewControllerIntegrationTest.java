@@ -22,11 +22,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.greentrade.greentrade.dto.ReviewDTO;
-import com.greentrade.greentrade.services.BeoordelingService;
+import com.greentrade.greentrade.services.ReviewService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class BeoordelingControllerIntegrationTest {
+class ReviewControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -35,31 +35,31 @@ class BeoordelingControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     @MockBean
-    private BeoordelingService beoordelingService;
+    private ReviewService reviewService;
 
     @Test
     @WithMockUser
-    void whenGetAllBeoordelingen_thenSuccess() throws Exception {
-        ReviewDTO review = new ReviewDTO(1L, 1L, 1L, 5, "Goed product", LocalDateTime.now());
+    void whenGetAllReviews_thenSuccess() throws Exception {
+        ReviewDTO review = new ReviewDTO(1L, 1L, 1L, 5, "Good product", LocalDateTime.now());
         
-        when(beoordelingService.getAlleBeoordelingen())
+        when(reviewService.getAllReviews())
             .thenReturn(Arrays.asList(review));
 
-        mockMvc.perform(get("/api/beoordelingen"))
+        mockMvc.perform(get("/api/reviews"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].score").value(5));
     }
 
     @Test
     @WithMockUser
-    void whenCreateBeoordeling_thenSuccess() throws Exception {
-        ReviewDTO reviewDTO = new ReviewDTO(null, 1L, 1L, 4, "Prima product", LocalDateTime.now());
-        ReviewDTO savedReview = new ReviewDTO(1L, 1L, 1L, 4, "Prima product", LocalDateTime.now());
+    void whenCreateReview_thenSuccess() throws Exception {
+        ReviewDTO reviewDTO = new ReviewDTO(null, 1L, 1L, 4, "Nice product", LocalDateTime.now());
+        ReviewDTO savedReview = new ReviewDTO(1L, 1L, 1L, 4, "Nice product", LocalDateTime.now());
 
-        when(beoordelingService.maakBeoordeling(any(ReviewDTO.class)))
+        when(reviewService.createReview(any(ReviewDTO.class)))
             .thenReturn(savedReview);
 
-        mockMvc.perform(post("/api/beoordelingen")
+        mockMvc.perform(post("/api/reviews")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(reviewDTO)))
                 .andExpect(status().isCreated())
@@ -68,26 +68,26 @@ class BeoordelingControllerIntegrationTest {
 
     @Test
     @WithMockUser
-    void whenGetBeoordelingenVoorProduct_thenSuccess() throws Exception {
-        ReviewDTO review = new ReviewDTO(1L, 1L, 1L, 5, "Goed product", LocalDateTime.now());
+    void whenGetReviewsForProduct_thenSuccess() throws Exception {
+        ReviewDTO review = new ReviewDTO(1L, 1L, 1L, 5, "Good product", LocalDateTime.now());
         
-        when(beoordelingService.getBeoordelingenVoorProduct(anyLong()))
+        when(reviewService.getReviewsForProduct(anyLong()))
             .thenReturn(Arrays.asList(review));
 
-        mockMvc.perform(get("/api/beoordelingen/product/1"))
+        mockMvc.perform(get("/api/reviews/product/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].score").value(5));
     }
 
     @Test
     @WithMockUser
-    void whenUpdateBeoordeling_thenSuccess() throws Exception {
-        ReviewDTO reviewDTO = new ReviewDTO(1L, 1L, 1L, 3, "Update: Matig product", LocalDateTime.now());
+    void whenUpdateReview_thenSuccess() throws Exception {
+        ReviewDTO reviewDTO = new ReviewDTO(1L, 1L, 1L, 3, "Update: Average product", LocalDateTime.now());
 
-        when(beoordelingService.updateBeoordeling(anyLong(), any(ReviewDTO.class)))
+        when(reviewService.updateReview(anyLong(), any(ReviewDTO.class)))
             .thenReturn(reviewDTO);
 
-        mockMvc.perform(put("/api/beoordelingen/1")
+        mockMvc.perform(put("/api/reviews/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(reviewDTO)))
                 .andExpect(status().isOk())
@@ -96,7 +96,7 @@ class BeoordelingControllerIntegrationTest {
 
     @Test 
     void whenUnauthorizedAccess_thenForbidden() throws Exception {
-        mockMvc.perform(get("/api/beoordelingen"))
+        mockMvc.perform(get("/api/reviews"))
                 .andExpect(status().isForbidden());
     }
 }

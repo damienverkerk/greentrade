@@ -14,24 +14,24 @@ import lombok.Data;
 public class ProductVerificationDTO {
     private Long id;
     
-    @NotNull(message = "Product ID is verplicht")
+    @NotNull(message = "Product ID is required")
     private Long productId;
     
     private VerificationStatus status;
     
     private LocalDateTime verificationDate;
     
-    @Size(max = 500, message = "Opmerkingen mogen niet langer zijn dan 500 karakters")
+    @Size(max = 500, message = "Notes cannot be longer than 500 characters")
     private String reviewerNotes;
     
     private Long reviewerId;
     
     private LocalDateTime submissionDate;
     
-    @Min(value = 0, message = "Duurzaamheidsscore moet minimaal 0 zijn")
-    @Max(value = 100, message = "Duurzaamheidsscore mag maximaal 100 zijn")
+    @Min(value = 0, message = "Sustainability score must be at least 0")
+    @Max(value = 100, message = "Sustainability score cannot exceed 100")
     private Integer sustainabilityScore;
     
-    @Size(max = 500, message = "Reden voor afwijzing mag niet langer zijn dan 500 karakters")
+    @Size(max = 500, message = "Rejection reason cannot be longer than 500 characters")
     private String rejectionReason;
 }

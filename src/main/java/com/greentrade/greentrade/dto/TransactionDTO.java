@@ -9,32 +9,32 @@ import jakarta.validation.constraints.NotNull;
 public class TransactionDTO {
     private Long id;
 
-    @NotNull(message = "Koper ID is verplicht")
-    private Long koperId;
+    @NotNull(message = "Buyer ID is required")
+    private Long buyerId;
 
-    @NotNull(message = "Product ID is verplicht")
+    @NotNull(message = "Product ID is required")
     private Long productId;
 
-    @NotNull(message = "Bedrag is verplicht")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Bedrag moet groter zijn dan 0")
-    private BigDecimal bedrag;
+    @NotNull(message = "Amount is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Amount must be greater than 0")
+    private BigDecimal amount;
 
-    @NotNull(message = "Datum is verplicht")
-    private LocalDateTime datum;
+    @NotNull(message = "Date is required")
+    private LocalDateTime date;
 
-    @NotBlank(message = "Status is verplicht")
+    @NotBlank(message = "Status is required")
     private String status;
 
     // Constructors
     public TransactionDTO() {}
 
-    public TransactionDTO(Long id, Long koperId, Long productId, BigDecimal bedrag, 
-                          LocalDateTime datum, String status) {
+    public TransactionDTO(Long id, Long buyerId, Long productId, BigDecimal amount, 
+                          LocalDateTime date, String status) {
         this.id = id;
-        this.koperId = koperId;
+        this.buyerId = buyerId;
         this.productId = productId;
-        this.bedrag = bedrag;
-        this.datum = datum;
+        this.amount = amount;
+        this.date = date;
         this.status = status;
     }
 
@@ -47,12 +47,12 @@ public class TransactionDTO {
         this.id = id;
     }
 
-    public Long getKoperId() {
-        return koperId;
+    public Long getBuyerId() {
+        return buyerId;
     }
 
-    public void setKoperId(Long koperId) {
-        this.koperId = koperId;
+    public void setBuyerId(Long buyerId) {
+        this.buyerId = buyerId;
     }
 
     public Long getProductId() {
@@ -63,20 +63,20 @@ public class TransactionDTO {
         this.productId = productId;
     }
 
-    public BigDecimal getBedrag() {
-        return bedrag;
+    public BigDecimal getAmount() {
+        return amount;
     }
 
-    public void setBedrag(BigDecimal bedrag) {
-        this.bedrag = bedrag;
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
     }
 
-    public LocalDateTime getDatum() {
-        return datum;
+    public LocalDateTime getDate() {
+        return date;
     }
 
-    public void setDatum(LocalDateTime datum) {
-        this.datum = datum;
+    public void setDate(LocalDateTime date) {
+        this.date = date;
     }
 
     public String getStatus() {

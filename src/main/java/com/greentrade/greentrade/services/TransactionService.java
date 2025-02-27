@@ -30,43 +30,43 @@ public class TransactionService {
         this.productRepository = productRepository;
     }
 
-    public List<TransactionDTO> getAlleTransacties() {
+    public List<TransactionDTO> getAllTransactions() {
         return transactionRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public TransactionDTO getTransactieById(Long id) {
+    public TransactionDTO getTransactionById(Long id) {
         return transactionRepository.findById(id)
                 .map(this::convertToDTO)
                 .orElse(null);
     }
 
-    public List<TransactionDTO> getTransactiesDoorKoper(Long koperId) {
-        User koper = userRepository.findById(koperId)
-                .orElseThrow(() -> new RuntimeException("Koper niet gevonden met id: " + koperId));
-        return transactionRepository.findByKoper(koper).stream()
+    public List<TransactionDTO> getTransactionsByBuyer(Long buyerId) {
+        User buyer = userRepository.findById(buyerId)
+                .orElseThrow(() -> new RuntimeException("Buyer not found with id: " + buyerId));
+        return transactionRepository.findByBuyer(buyer).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<TransactionDTO> getTransactiesDoorVerkoper(Long verkoperId) {
-        User verkoper = userRepository.findById(verkoperId)
-                .orElseThrow(() -> new RuntimeException("Verkoper niet gevonden met id: " + verkoperId));
-        return transactionRepository.findByProduct_Verkoper(verkoper).stream()
+    public List<TransactionDTO> getTransactionsBySeller(Long sellerId) {
+        User seller = userRepository.findById(sellerId)
+                .orElseThrow(() -> new RuntimeException("Seller not found with id: " + sellerId));
+        return transactionRepository.findByProduct_Seller(seller).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<TransactionDTO> getTransactiesTussenData(LocalDateTime start, LocalDateTime eind) {
-        return transactionRepository.findByDatumBetween(start, eind).stream()
+    public List<TransactionDTO> getTransactionsBetweenDates(LocalDateTime start, LocalDateTime end) {
+        return transactionRepository.findByDateBetween(start, end).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public TransactionDTO maakTransactie(TransactionDTO transactionDTO) {
-        if (transactionDTO.getBedrag() == null || transactionDTO.getBedrag().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Bedrag moet groter zijn dan 0");
+    public TransactionDTO createTransaction(TransactionDTO transactionDTO) {
+        if (transactionDTO.getAmount() == null || transactionDTO.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than 0");
         }
 
         try {
@@ -74,22 +74,22 @@ public class TransactionService {
             Transaction savedTransaction = transactionRepository.save(transaction);
             return convertToDTO(savedTransaction);
         } catch (IllegalArgumentException e) {
-            throw e;  // Gooi validatie errors door
+            throw e;  // Re-throw validation errors
         } catch (Exception e) {
-            throw new RuntimeException("Transactie aanmaken mislukt: " + e.getMessage());
+            throw new RuntimeException("Failed to create transaction: " + e.getMessage());
         }
     }
 
-    public TransactionDTO updateTransactieStatus(Long id, String nieuweStatus) {
+    public TransactionDTO updateTransactionStatus(Long id, String newStatus) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transactie niet gevonden met id: " + id));
-        transaction.setStatus(nieuweStatus);
+                .orElseThrow(() -> new RuntimeException("Transaction not found with id: " + id));
+        transaction.setStatus(newStatus);
         return convertToDTO(transactionRepository.save(transaction));
     }
 
-    public void verwijderTransactie(Long id) {
+    public void deleteTransaction(Long id) {
         if (!transactionRepository.existsById(id)) {
-            throw new RuntimeException("Transactie niet gevonden met id: " + id);
+            throw new RuntimeException("Transaction not found with id: " + id);
         }
         transactionRepository.deleteById(id);
     }
@@ -97,10 +97,10 @@ public class TransactionService {
     private TransactionDTO convertToDTO(Transaction transaction) {
         return new TransactionDTO(
                 transaction.getId(),
-                transaction.getKoper().getId(),
+                transaction.getBuyer().getId(),
                 transaction.getProduct().getId(),
-                transaction.getBedrag(),
-                transaction.getDatum(),
+                transaction.getAmount(),
+                transaction.getDate(),
                 transaction.getStatus()
         );
     }
@@ -108,16 +108,16 @@ public class TransactionService {
     private Transaction convertToEntity(TransactionDTO transactionDTO) {
         Transaction transaction = new Transaction();
         transaction.setId(transactionDTO.getId());
-        transaction.setBedrag(transactionDTO.getBedrag());
-        transaction.setDatum(transactionDTO.getDatum());
+        transaction.setAmount(transactionDTO.getAmount());
+        transaction.setDate(transactionDTO.getDate());
         transaction.setStatus(transactionDTO.getStatus());
 
-        User koper = userRepository.findById(transactionDTO.getKoperId())
-                .orElseThrow(() -> new RuntimeException("Koper niet gevonden met id: " + transactionDTO.getKoperId()));
-        transaction.setKoper(koper);
+        User buyer = userRepository.findById(transactionDTO.getBuyerId())
+                .orElseThrow(() -> new RuntimeException("Buyer not found with id: " + transactionDTO.getBuyerId()));
+        transaction.setBuyer(buyer);
 
         Product product = productRepository.findById(transactionDTO.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product niet gevonden met id: " + transactionDTO.getProductId()));
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + transactionDTO.getProductId()));
         transaction.setProduct(product);
 
         return transaction;

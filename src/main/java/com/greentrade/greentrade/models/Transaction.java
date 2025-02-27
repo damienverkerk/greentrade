@@ -13,7 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "transacties")
+@Table(name = "transactions")
 public class Transaction {
 
     @Id
@@ -21,18 +21,18 @@ public class Transaction {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "koper_id", nullable = false)
-    private User koper;
+    @JoinColumn(name = "buyer_id", nullable = false)
+    private User buyer;
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     @Column(nullable = false)
-    private BigDecimal bedrag;
+    private BigDecimal amount;
 
     @Column(nullable = false)
-    private LocalDateTime datum;
+    private LocalDateTime date;
 
     @Column(nullable = false)
     private String status;
@@ -40,11 +40,11 @@ public class Transaction {
     // Constructors
     public Transaction() {}
 
-    public Transaction(User koper, Product product, BigDecimal bedrag, LocalDateTime datum, String status) {
-        this.koper = koper;
+    public Transaction(User buyer, Product product, BigDecimal amount, LocalDateTime date, String status) {
+        this.buyer = buyer;
         this.product = product;
-        this.bedrag = bedrag;
-        this.datum = datum;
+        this.amount = amount;
+        this.date = date;
         this.status = status;
     }
 
@@ -57,12 +57,12 @@ public class Transaction {
         this.id = id;
     }
 
-    public User getKoper() {
-        return koper;
+    public User getBuyer() {
+        return buyer;
     }
 
-    public void setKoper(User koper) {
-        this.koper = koper;
+    public void setBuyer(User buyer) {
+        this.buyer = buyer;
     }
 
     public Product getProduct() {
@@ -73,20 +73,20 @@ public class Transaction {
         this.product = product;
     }
 
-    public BigDecimal getBedrag() {
-        return bedrag;
+    public BigDecimal getAmount() {
+        return amount;
     }
 
-    public void setBedrag(BigDecimal bedrag) {
-        this.bedrag = bedrag;
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
     }
 
-    public LocalDateTime getDatum() {
-        return datum;
+    public LocalDateTime getDate() {
+        return date;
     }
 
-    public void setDatum(LocalDateTime datum) {
-        this.datum = datum;
+    public void setDate(LocalDateTime date) {
+        this.date = date;
     }
 
     public String getStatus() {

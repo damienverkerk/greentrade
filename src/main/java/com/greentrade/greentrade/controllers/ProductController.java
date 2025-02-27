@@ -28,8 +28,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/producten")
-@Tag(name = "Producten", description = "API endpoints voor product management")
+@RequestMapping("/api/products")
+@Tag(name = "Products", description = "API endpoints for product management")
 public class ProductController {
 
     private final ProductService productService;
@@ -40,32 +40,32 @@ public class ProductController {
     }
 
     @Operation(
-        summary = "Haal alle producten op",
-        description = "Haalt een lijst van alle beschikbare producten op in het systeem"
+        summary = "Get all products",
+        description = "Retrieves a list of all available products in the system"
     )
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "Producten succesvol opgehaald",
+            description = "Products successfully retrieved",
             content = @Content(schema = @Schema(implementation = ProductDTO.class))
         )
     })
     @GetMapping
-    public ResponseEntity<List<ProductDTO>> getAlleProducten() {
+    public ResponseEntity<List<ProductDTO>> getAllProducts() {
         return new ResponseEntity<>(productService.getAllProducts(), HttpStatus.OK);
     }
 
     @Operation(
-        summary = "Haal een specifiek product op",
-        description = "Haalt een specifiek product op basis van het ID"
+        summary = "Get a specific product",
+        description = "Retrieves a specific product based on its ID"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Product succesvol gevonden"),
-        @ApiResponse(responseCode = "404", description = "Product niet gevonden")
+        @ApiResponse(responseCode = "200", description = "Product successfully found"),
+        @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getProductById(
-            @Parameter(description = "ID van het product", required = true)
+            @Parameter(description = "ID of the product", required = true)
             @PathVariable Long id) {
         ProductDTO product = productService.getProductById(id);
         return product != null ? new ResponseEntity<>(product, HttpStatus.OK) 
@@ -73,35 +73,35 @@ public class ProductController {
     }
 
     @Operation(
-        summary = "Maak een nieuw product aan",
-        description = "Maakt een nieuw product aan in het systeem"
+        summary = "Create a new product",
+        description = "Creates a new product in the system"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Product succesvol aangemaakt"),
-        @ApiResponse(responseCode = "400", description = "Ongeldige invoergegevens")
+        @ApiResponse(responseCode = "201", description = "Product successfully created"),
+        @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PostMapping
-    public ResponseEntity<ProductDTO> maakProduct(
-            @Parameter(description = "Product gegevens", required = true)
+    public ResponseEntity<ProductDTO> createProduct(
+            @Parameter(description = "Product data", required = true)
             @Valid @RequestBody ProductDTO productDTO) {
-        ProductDTO nieuwProduct = productService.createProduct(productDTO);
-        return new ResponseEntity<>(nieuwProduct, HttpStatus.CREATED);
+        ProductDTO newProduct = productService.createProduct(productDTO);
+        return new ResponseEntity<>(newProduct, HttpStatus.CREATED);
     }
 
     @Operation(
-        summary = "Update een bestaand product",
-        description = "Werkt een bestaand product bij met nieuwe gegevens"
+        summary = "Update an existing product",
+        description = "Updates an existing product with new data"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Product succesvol bijgewerkt"),
-        @ApiResponse(responseCode = "404", description = "Product niet gevonden"),
-        @ApiResponse(responseCode = "400", description = "Ongeldige invoergegevens")
+        @ApiResponse(responseCode = "200", description = "Product successfully updated"),
+        @ApiResponse(responseCode = "404", description = "Product not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PutMapping("/{id}")
     public ResponseEntity<ProductDTO> updateProduct(
-            @Parameter(description = "ID van het product", required = true)
+            @Parameter(description = "ID of the product", required = true)
             @PathVariable Long id,
-            @Parameter(description = "Bijgewerkte product gegevens", required = true)
+            @Parameter(description = "Updated product data", required = true)
             @Valid @RequestBody ProductDTO productDTO) {
         try {
             ProductDTO updatedProduct = productService.updateProduct(id, productDTO);
@@ -112,16 +112,16 @@ public class ProductController {
     }
 
     @Operation(
-        summary = "Verwijder een product",
-        description = "Verwijdert een product uit het systeem"
+        summary = "Delete a product",
+        description = "Deletes a product from the system"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Product succesvol verwijderd"),
-        @ApiResponse(responseCode = "404", description = "Product niet gevonden")
+        @ApiResponse(responseCode = "204", description = "Product successfully deleted"),
+        @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> verwijderProduct(
-            @Parameter(description = "ID van het product", required = true)
+    public ResponseEntity<Void> deleteProduct(
+            @Parameter(description = "ID of the product", required = true)
             @PathVariable Long id) {
         try {
             productService.deleteProduct(id);
@@ -132,32 +132,32 @@ public class ProductController {
     }
 
     @Operation(
-        summary = "Zoek producten op naam",
-        description = "Zoekt producten op basis van een naam (gedeeltelijke match)"
+        summary = "Search products by name",
+        description = "Searches products based on a name (partial match)"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Zoekopdracht succesvol uitgevoerd")
+        @ApiResponse(responseCode = "200", description = "Search successfully executed")
     })
-    @GetMapping("/zoek")
-    public ResponseEntity<List<ProductDTO>> zoekProducten(
-            @Parameter(description = "Naam om op te zoeken", required = true)
-            @RequestParam String naam) {
-        List<ProductDTO> producten = productService.searchProductsByName(naam);
-        return new ResponseEntity<>(producten, HttpStatus.OK);
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductDTO>> searchProducts(
+            @Parameter(description = "Name to search for", required = true)
+            @RequestParam String name) {
+        List<ProductDTO> products = productService.searchProductsByName(name);
+        return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
     @Operation(
-        summary = "Haal duurzame producten op",
-        description = "Haalt producten op met een minimale duurzaamheidsscore"
+        summary = "Get sustainable products",
+        description = "Retrieves products with a minimum sustainability score"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Producten succesvol opgehaald")
+        @ApiResponse(responseCode = "200", description = "Products successfully retrieved")
     })
-    @GetMapping("/duurzaam")
-    public ResponseEntity<List<ProductDTO>> getDuurzameProducten(
-            @Parameter(description = "Minimale duurzaamheidsscore", required = true)
+    @GetMapping("/sustainable")
+    public ResponseEntity<List<ProductDTO>> getSustainableProducts(
+            @Parameter(description = "Minimum sustainability score", required = true)
             @RequestParam Integer minimumScore) {
-        List<ProductDTO> producten = productService.getProductsByDuurzaamheidsScore(minimumScore);
-        return new ResponseEntity<>(producten, HttpStatus.OK);
+        List<ProductDTO> products = productService.getProductsBySustainabilityScore(minimumScore);
+        return new ResponseEntity<>(products, HttpStatus.OK);
     }
 }

@@ -15,14 +15,14 @@ import com.greentrade.greentrade.repositories.ReviewRepository;
 import com.greentrade.greentrade.repositories.UserRepository;
 
 @Service
-public class BeoordelingService {
+public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
 
     @Autowired
-    public BeoordelingService(ReviewRepository reviewRepository, 
+    public ReviewService(ReviewRepository reviewRepository, 
                             ProductRepository productRepository,
                             UserRepository userRepository) {
         this.reviewRepository = reviewRepository;
@@ -30,52 +30,52 @@ public class BeoordelingService {
         this.userRepository = userRepository;
     }
 
-    public List<ReviewDTO> getAlleBeoordelingen() {
+    public List<ReviewDTO> getAllReviews() {
         return reviewRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public ReviewDTO getBeoordelingById(Long id) {
+    public ReviewDTO getReviewById(Long id) {
         return reviewRepository.findById(id)
                 .map(this::convertToDTO)
                 .orElse(null);
     }
 
-    public List<ReviewDTO> getBeoordelingenVoorProduct(Long productId) {
+    public List<ReviewDTO> getReviewsForProduct(Long productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product niet gevonden met id: " + productId));
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
         return reviewRepository.findByProduct(product).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public Double getGemiddeldeScoreVoorProduct(Long productId) {
+    public Double getAverageScoreForProduct(Long productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product niet gevonden met id: " + productId));
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
         return reviewRepository.averageScoreByProduct(product);
     }
 
-    public ReviewDTO maakBeoordeling(ReviewDTO reviewDTO) {
+    public ReviewDTO createReview(ReviewDTO reviewDTO) {
         Review review = convertToEntity(reviewDTO);
         Review savedReview = reviewRepository.save(review);
         return convertToDTO(savedReview);
     }
 
-    public ReviewDTO updateBeoordeling(Long id, ReviewDTO reviewDTO) {
+    public ReviewDTO updateReview(Long id, ReviewDTO reviewDTO) {
         Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Beoordeling niet gevonden met id: " + id));
+                .orElseThrow(() -> new RuntimeException("Review not found with id: " + id));
         
         review.setScore(reviewDTO.getScore());
-        review.setCommentaar(reviewDTO.getCommentaar());
+        review.setComment(reviewDTO.getComment());
         
         Review updatedReview = reviewRepository.save(review);
         return convertToDTO(updatedReview);
     }
 
-    public void verwijderBeoordeling(Long id) {
+    public void deleteReview(Long id) {
         if (!reviewRepository.existsById(id)) {
-            throw new RuntimeException("Beoordeling niet gevonden met id: " + id);
+            throw new RuntimeException("Review not found with id: " + id);
         }
         reviewRepository.deleteById(id);
     }
@@ -84,26 +84,26 @@ public class BeoordelingService {
         return new ReviewDTO(
             review.getId(),
             review.getProduct().getId(),
-            review.getRecensent().getId(),
+            review.getReviewer().getId(),
             review.getScore(),
-            review.getCommentaar(),
-            review.getDatum()
+            review.getComment(),
+            review.getDate()
         );
     }
 
     private Review convertToEntity(ReviewDTO reviewDTO) {
         Review review = new Review();
         review.setScore(reviewDTO.getScore());
-        review.setCommentaar(reviewDTO.getCommentaar());
-        review.setDatum(reviewDTO.getDatum());
+        review.setComment(reviewDTO.getComment());
+        review.setDate(reviewDTO.getDate());
 
         Product product = productRepository.findById(reviewDTO.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product niet gevonden met id: " + reviewDTO.getProductId()));
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + reviewDTO.getProductId()));
         review.setProduct(product);
 
-        User recensent = userRepository.findById(reviewDTO.getRecensentId())
-                .orElseThrow(() -> new RuntimeException("Recensent niet gevonden met id: " + reviewDTO.getRecensentId()));
-        review.setRecensent(recensent);
+        User reviewer = userRepository.findById(reviewDTO.getReviewerId())
+                .orElseThrow(() -> new RuntimeException("Reviewer not found with id: " + reviewDTO.getReviewerId()));
+        review.setReviewer(reviewer);
 
         return review;
     }

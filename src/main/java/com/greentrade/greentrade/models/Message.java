@@ -12,7 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "berichten")
+@Table(name = "messages")
 public class Message {
 
     @Id
@@ -20,35 +20,35 @@ public class Message {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "afzender_id", nullable = false)
-    private User afzender;
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender;
 
     @ManyToOne
-    @JoinColumn(name = "ontvanger_id", nullable = false)
-    private User ontvanger;
+    @JoinColumn(name = "receiver_id", nullable = false)
+    private User receiver;
 
     @Column(nullable = false)
-    private String onderwerp;
+    private String subject;
 
     @Column(nullable = false, length = 2000)
-    private String inhoud;
+    private String content;
+
+    @Column(name = "timestamp", nullable = false)
+    private LocalDateTime timestamp;
 
     @Column(nullable = false)
-    private LocalDateTime datumTijd;
-
-    @Column(nullable = false)
-    private boolean gelezen;
+    private boolean read;
 
     // Constructors
     public Message() {}
 
-    public Message(User afzender, User ontvanger, String onderwerp, String inhoud, LocalDateTime datumTijd) {
-        this.afzender = afzender;
-        this.ontvanger = ontvanger;
-        this.onderwerp = onderwerp;
-        this.inhoud = inhoud;
-        this.datumTijd = datumTijd;
-        this.gelezen = false;
+    public Message(User sender, User receiver, String subject, String content, LocalDateTime timestamp) {
+        this.sender = sender;
+        this.receiver = receiver;
+        this.subject = subject;
+        this.content = content;
+        this.timestamp = timestamp;
+        this.read = false;
     }
 
     // Getters and Setters
@@ -60,51 +60,51 @@ public class Message {
         this.id = id;
     }
 
-    public User getAfzender() {
-        return afzender;
+    public User getSender() {
+        return sender;
     }
 
-    public void setAfzender(User afzender) {
-        this.afzender = afzender;
+    public void setSender(User sender) {
+        this.sender = sender;
     }
 
-    public User getOntvanger() {
-        return ontvanger;
+    public User getReceiver() {
+        return receiver;
     }
 
-    public void setOntvanger(User ontvanger) {
-        this.ontvanger = ontvanger;
+    public void setReceiver(User receiver) {
+        this.receiver = receiver;
     }
 
-    public String getOnderwerp() {
-        return onderwerp;
+    public String getSubject() {
+        return subject;
     }
 
-    public void setOnderwerp(String onderwerp) {
-        this.onderwerp = onderwerp;
+    public void setSubject(String subject) {
+        this.subject = subject;
     }
 
-    public String getInhoud() {
-        return inhoud;
+    public String getContent() {
+        return content;
     }
 
-    public void setInhoud(String inhoud) {
-        this.inhoud = inhoud;
+    public void setContent(String content) {
+        this.content = content;
     }
 
-    public LocalDateTime getDatumTijd() {
-        return datumTijd;
+    public LocalDateTime getTimestamp() {
+        return timestamp;
     }
 
-    public void setDatumTijd(LocalDateTime datumTijd) {
-        this.datumTijd = datumTijd;
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
     }
 
-    public boolean isGelezen() {
-        return gelezen;
+    public boolean isRead() {
+        return read;
     }
 
-    public void setGelezen(boolean gelezen) {
-        this.gelezen = gelezen;
+    public void setRead(boolean read) {
+        this.read = read;
     }
 }

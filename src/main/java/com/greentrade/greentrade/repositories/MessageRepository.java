@@ -10,7 +10,7 @@ import com.greentrade.greentrade.models.User;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
-    List<Message> findByAfzender(User afzender);
-    List<Message> findByOntvanger(User ontvanger);
-    List<Message> findByOntvangerAndGelezenIsFalse(User ontvanger);
+    List<Message> findBySender(User sender);
+    List<Message> findByReceiver(User receiver);
+    List<Message> findByReceiverAndReadIsFalse(User receiver);
 }

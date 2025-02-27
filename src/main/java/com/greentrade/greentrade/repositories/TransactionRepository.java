@@ -11,7 +11,7 @@ import com.greentrade.greentrade.models.User;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-    List<Transaction> findByKoper(User koper);
-    List<Transaction> findByProduct_Verkoper(User verkoper);
-    List<Transaction> findByDatumBetween(LocalDateTime start, LocalDateTime eind);
+    List<Transaction> findByBuyer(User buyer);
+    List<Transaction> findByProduct_Seller(User seller);
+    List<Transaction> findByDateBetween(LocalDateTime start, LocalDateTime end);
 }

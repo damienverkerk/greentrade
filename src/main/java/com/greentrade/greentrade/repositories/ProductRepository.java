@@ -11,10 +11,10 @@ import com.greentrade.greentrade.models.User;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
     
-    List<Product> findByVerkoper(User verkoper);
+    List<Product> findBySeller(User seller);
     
-    List<Product> findByNaamContainingIgnoreCase(String naam);
+    List<Product> findByNameContainingIgnoreCase(String name);
     
-    List<Product> findByDuurzaamheidsScoreGreaterThanEqual(Integer score);
+    List<Product> findBySustainabilityScoreGreaterThanEqual(Integer score);
     
 }

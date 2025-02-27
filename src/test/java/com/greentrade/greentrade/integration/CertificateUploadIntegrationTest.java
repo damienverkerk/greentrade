@@ -1,5 +1,3 @@
-// src/test/java/com/greentrade/greentrade/integration/CertificateUploadIntegrationTest.java
-
 package com.greentrade.greentrade.integration;
 
 import java.time.LocalDate;
@@ -42,21 +40,21 @@ class CertificateUploadIntegrationTest {
    @BeforeEach
    @SuppressWarnings("unused")
    void setUp() {
-       // Test certificaat aanmaken
+       // Create test certificate
        testCertificate = new CertificateDTO(
            null,
            "ISO 14001", 
            "Bureau Veritas",
            LocalDate.now(),
            LocalDate.now().plusYears(1),
-           "Milieucertificaat",
+           "Environmental certificate",
            null,
-           2L  // ID van verkoper uit data.sql
+           2L  // ID of seller from data.sql
        );
 
-       // Test bestand aanmaken
+       // Create test file
        testFile = new MockMultipartFile(
-           "bestand",
+           "file",
            "test-cert.pdf",
            MediaType.APPLICATION_PDF_VALUE,
            "PDF test content".getBytes()
@@ -64,14 +62,14 @@ class CertificateUploadIntegrationTest {
    }
 
     @Test
-    @DisplayName("Complete certificaat upload - happy path")
-    @WithMockUser(username = "verkoper@greentrade.nl", roles = "VERKOPER")
+    @DisplayName("Complete certificate upload - happy path")
+    @WithMockUser(username = "seller@greentrade.nl", roles = "SELLER")
     void whenUploadCertificate_thenSuccess() throws Exception {
-        // Debug: Print test certificaat
-        System.out.println("Test certificaat voor creatie: " + objectMapper.writeValueAsString(testCertificate));
+        // Debug: Print test certificate
+        System.out.println("Test certificate before creation: " + objectMapper.writeValueAsString(testCertificate));
 
-        // 1. Certificaat aanmaken
-        MvcResult createResult = mockMvc.perform(post("/api/certificaten")
+        // 1. Create certificate
+        MvcResult createResult = mockMvc.perform(post("/api/certificates")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testCertificate)))
                 .andExpect(status().isOk())
@@ -85,8 +83,8 @@ class CertificateUploadIntegrationTest {
 
        assertNotNull(createdCertificate.getId());
 
-       // 2. Bestand uploaden
-       MvcResult uploadResult = mockMvc.perform(multipart("/api/certificaten/{id}/bestand", createdCertificate.getId())
+       // 2. Upload file
+       MvcResult uploadResult = mockMvc.perform(multipart("/api/certificates/{id}/file", createdCertificate.getId())
                .file(testFile))
                .andExpect(status().isOk())
                .andReturn();
@@ -95,20 +93,20 @@ class CertificateUploadIntegrationTest {
            uploadResult.getResponse().getContentAsString(),
            CertificateDTO.class
        );
-       assertNotNull(updatedCertificate.getBestandsPad());
+       assertNotNull(updatedCertificate.getFilePath());
 
-       // 3. Bestand downloaden en verifiëren
-       mockMvc.perform(get("/api/certificaten/{id}/bestand", updatedCertificate.getId()))
+       // 3. Download and verify file
+       mockMvc.perform(get("/api/certificates/{id}/file", updatedCertificate.getId()))
                .andExpect(status().isOk())
                .andExpect(header().string("Content-Type", MediaType.APPLICATION_PDF_VALUE));
    }
 
    @Test
-   @DisplayName("Upload ongeldig bestandstype - verwacht 400")
-   @WithMockUser(roles = "VERKOPER")
+   @DisplayName("Upload invalid file type - expect 400")
+   @WithMockUser(roles = "SELLER")
    void whenUploadInvalidFile_thenBadRequest() throws Exception {
-       // Eerst geldig certificaat aanmaken
-       MvcResult createResult = mockMvc.perform(post("/api/certificaten")
+       // First create valid certificate
+       MvcResult createResult = mockMvc.perform(post("/api/certificates")
                .contentType(MediaType.APPLICATION_JSON)
                .content(objectMapper.writeValueAsString(testCertificate)))
                .andExpect(status().isOk())
@@ -119,41 +117,41 @@ class CertificateUploadIntegrationTest {
            CertificateDTO.class
        );
 
-       // Probeer ongeldig bestand te uploaden
+       // Try to upload invalid file
        MockMultipartFile invalidFile = new MockMultipartFile(
-           "bestand",
+           "file",
            "test.exe",
            "application/octet-stream",
            "Invalid content".getBytes()
        );
 
-       mockMvc.perform(multipart("/api/certificaten/{id}/bestand", createdCertificate.getId())
+       mockMvc.perform(multipart("/api/certificates/{id}/file", createdCertificate.getId())
                .file(invalidFile))
                .andExpect(status().isBadRequest());
    }
 
    @Test
-   @DisplayName("Download niet-bestaand bestand - verwacht 404")
-   @WithMockUser(roles = "VERKOPER")
+   @DisplayName("Download non-existent file - expect 404")
+   @WithMockUser(roles = "SELLER")
    void whenDownloadNonExistentFile_thenNotFound() throws Exception {
-       mockMvc.perform(get("/api/certificaten/999/bestand"))
+       mockMvc.perform(get("/api/certificates/999/file"))
                .andExpect(status().isNotFound());
    }
 
    @Test
-   @DisplayName("Upload zonder authenticatie - verwacht 403")
+   @DisplayName("Upload without authentication - expect 403")
    void whenUploadWithoutAuth_thenForbidden() throws Exception {
-       mockMvc.perform(multipart("/api/certificaten/1/bestand")
+       mockMvc.perform(multipart("/api/certificates/1/file")
                .file(testFile))
                .andExpect(status().isForbidden());
    }
 
    @Test
-   @DisplayName("Upload te groot bestand - verwacht 400")
-   @WithMockUser(roles = "VERKOPER")
+   @DisplayName("Upload file too large - expect 400")
+   @WithMockUser(roles = "SELLER")
    void whenUploadTooLargeFile_thenBadRequest() throws Exception {
-       // Eerst geldig certificaat aanmaken
-       MvcResult createResult = mockMvc.perform(post("/api/certificaten")
+       // First create valid certificate
+       MvcResult createResult = mockMvc.perform(post("/api/certificates")
                .contentType(MediaType.APPLICATION_JSON)
                .content(objectMapper.writeValueAsString(testCertificate)))
                .andExpect(status().isOk())
@@ -164,16 +162,16 @@ class CertificateUploadIntegrationTest {
            CertificateDTO.class
        );
 
-       // Probeer te groot bestand te uploaden
+       // Try to upload too large file
        byte[] largeContent = new byte[11 * 1024 * 1024]; // 11MB
        MockMultipartFile largeFile = new MockMultipartFile(
-           "bestand",
+           "file",
            "large.pdf",
            MediaType.APPLICATION_PDF_VALUE,
            largeContent
        );
 
-       mockMvc.perform(multipart("/api/certificaten/{id}/bestand", createdCertificate.getId())
+       mockMvc.perform(multipart("/api/certificates/{id}/file", createdCertificate.getId())
                .file(largeFile))
                .andExpect(status().isBadRequest());
    }

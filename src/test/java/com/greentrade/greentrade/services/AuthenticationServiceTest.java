@@ -59,10 +59,10 @@ class AuthenticationServiceTest {
     @SuppressWarnings("unused")
     void setUp() {
         validRegisterRequest = RegisterRequest.builder()
-            .naam("Test User")
+            .name("Test User")
             .email("test@example.com")
-            .wachtwoord("Test123!@#")
-            .role(Role.ROLE_KOPER.toString())
+            .password("Test123!@#")
+            .role(Role.ROLE_BUYER.toString())
             .build();
             
         validLoginRequest = AuthRequest.builder()
@@ -72,11 +72,11 @@ class AuthenticationServiceTest {
             
         testUser = User.builder()
             .id(1L)
-            .naam("Test User")
+            .name("Test User")
             .email("test@example.com")
-            .wachtwoord("encoded_password")
-            .role(Role.ROLE_KOPER)
-            .verificatieStatus(true)
+            .password("encoded_password")
+            .role(Role.ROLE_BUYER)
+            .verificationStatus(true)
             .build();
     }
 
@@ -108,7 +108,7 @@ class AuthenticationServiceTest {
 
     @Test
     void registrerenMetZwakWachtwoordGeeftFout() {
-        validRegisterRequest.setWachtwoord("zwak");
+        validRegisterRequest.setPassword("zwak");
 
         SecurityException thrown = assertThrows(SecurityException.class, () -> 
             authenticationService.register(validRegisterRequest)
@@ -119,7 +119,7 @@ class AuthenticationServiceTest {
 
     @Test
     void registrerenMetLeegWachtwoordGeeftFout() {
-        validRegisterRequest.setWachtwoord("");
+        validRegisterRequest.setPassword("");
 
         SecurityException thrown = assertThrows(SecurityException.class, () -> 
             authenticationService.register(validRegisterRequest)
@@ -130,7 +130,7 @@ class AuthenticationServiceTest {
 
     @Test
     void registrerenZonderLetterInWachtwoordGeeftFout() {
-        validRegisterRequest.setWachtwoord("12345678!");
+        validRegisterRequest.setPassword("12345678!");
 
         SecurityException thrown = assertThrows(SecurityException.class, () -> 
             authenticationService.register(validRegisterRequest)
@@ -142,7 +142,7 @@ class AuthenticationServiceTest {
 
     @Test
     void registrerenZonderCijferInWachtwoordGeeftFout() {
-        validRegisterRequest.setWachtwoord("Password!");
+        validRegisterRequest.setPassword("Password!");
 
         SecurityException thrown = assertThrows(SecurityException.class, () -> 
             authenticationService.register(validRegisterRequest)
@@ -154,7 +154,7 @@ class AuthenticationServiceTest {
 
     @Test
     void registrerenZonderSpeciaalTekenInWachtwoordGeeftFout() {
-        validRegisterRequest.setWachtwoord("Password123");
+        validRegisterRequest.setPassword("Password123");
 
         SecurityException thrown = assertThrows(SecurityException.class, () -> 
             authenticationService.register(validRegisterRequest)

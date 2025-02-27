@@ -39,8 +39,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/certificaten")
-@Tag(name = "Certificaten", description = "API endpoints voor het beheren van duurzaamheidscertificaten")
+@RequestMapping("/api/certificates")
+@Tag(name = "Certificates", description = "API endpoints for managing sustainability certificates")
 public class CertificateController {
 
     private final CertificateService certificateService;
@@ -57,95 +57,95 @@ public class CertificateController {
     }
 
     @Operation(
-        summary = "Haal alle certificaten op",
-        description = "Haalt een lijst van alle duurzaamheidscertificaten op in het systeem"
+        summary = "Get all certificates",
+        description = "Retrieves a list of all sustainability certificates in the system"
     )
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "Certificaten succesvol opgehaald",
+            description = "Certificates successfully retrieved",
             content = @Content(schema = @Schema(implementation = CertificateDTO.class))
         )
     })
     @GetMapping
-    public ResponseEntity<List<CertificateDTO>> getAlleCertificaten() {
-        List<CertificateDTO> certificaten = certificateService.getAlleCertificaten();
-        return ResponseEntity.ok(certificaten);
+    public ResponseEntity<List<CertificateDTO>> getAllCertificates() {
+        List<CertificateDTO> certificates = certificateService.getAllCertificates();
+        return ResponseEntity.ok(certificates);
     }
 
     @Operation(
-        summary = "Haal een specifiek certificaat op",
-        description = "Haalt een specifiek certificaat op basis van het ID"
+        summary = "Get a specific certificate",
+        description = "Retrieves a specific certificate based on its ID"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Certificaat succesvol gevonden"),
-        @ApiResponse(responseCode = "404", description = "Certificaat niet gevonden")
+        @ApiResponse(responseCode = "200", description = "Certificate successfully found"),
+        @ApiResponse(responseCode = "404", description = "Certificate not found")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<CertificateDTO> getCertificaatById(
-            @Parameter(description = "ID van het certificaat", required = true)
+    public ResponseEntity<CertificateDTO> getCertificateById(
+            @Parameter(description = "ID of the certificate", required = true)
             @PathVariable Long id) {
-        CertificateDTO certificate = certificateService.getCertificaatById(id);
+        CertificateDTO certificate = certificateService.getCertificateById(id);
         return certificate != null ? ResponseEntity.ok(certificate) : ResponseEntity.notFound().build();
     }
 
     @Operation(
-        summary = "Maak een nieuw certificaat aan",
-        description = "Registreert een nieuw duurzaamheidscertificaat in het systeem"
+        summary = "Create a new certificate",
+        description = "Registers a new sustainability certificate in the system"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Certificaat succesvol aangemaakt"),
-        @ApiResponse(responseCode = "400", description = "Ongeldige invoergegevens")
+        @ApiResponse(responseCode = "201", description = "Certificate successfully created"),
+        @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PostMapping
-    public ResponseEntity<CertificateDTO> maakCertificaat(
-            @Parameter(description = "Certificaat gegevens", required = true)
+    public ResponseEntity<CertificateDTO> createCertificate(
+            @Parameter(description = "Certificate data", required = true)
             @Valid @RequestBody CertificateDTO certificateDTO) {
         try {
-            CertificateDTO nieuwCertificaat = certificateService.maakCertificaat(certificateDTO);
-            return ResponseEntity.ok(nieuwCertificaat);
+            CertificateDTO newCertificate = certificateService.createCertificate(certificateDTO);
+            return ResponseEntity.ok(newCertificate);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @Operation(
-        summary = "Update een bestaand certificaat",
-        description = "Werkt een bestaand certificaat bij met nieuwe gegevens"
+        summary = "Update an existing certificate",
+        description = "Updates an existing certificate with new data"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Certificaat succesvol bijgewerkt"),
-        @ApiResponse(responseCode = "404", description = "Certificaat niet gevonden"),
-        @ApiResponse(responseCode = "400", description = "Ongeldige invoergegevens")
+        @ApiResponse(responseCode = "200", description = "Certificate successfully updated"),
+        @ApiResponse(responseCode = "404", description = "Certificate not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<CertificateDTO> updateCertificaat(
-            @Parameter(description = "ID van het certificaat", required = true)
+    public ResponseEntity<CertificateDTO> updateCertificate(
+            @Parameter(description = "ID of the certificate", required = true)
             @PathVariable Long id,
-            @Parameter(description = "Bijgewerkte certificaat gegevens", required = true)
+            @Parameter(description = "Updated certificate data", required = true)
             @Valid @RequestBody CertificateDTO certificateDTO) {
         try {
-            CertificateDTO updatedCertificaat = certificateService.updateCertificaat(id, certificateDTO);
-            return ResponseEntity.ok(updatedCertificaat);
+            CertificateDTO updatedCertificate = certificateService.updateCertificate(id, certificateDTO);
+            return ResponseEntity.ok(updatedCertificate);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
     @Operation(
-        summary = "Verwijder een certificaat",
-        description = "Verwijdert een certificaat uit het systeem"
+        summary = "Delete a certificate",
+        description = "Deletes a certificate from the system"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Certificaat succesvol verwijderd"),
-        @ApiResponse(responseCode = "404", description = "Certificaat niet gevonden")
+        @ApiResponse(responseCode = "204", description = "Certificate successfully deleted"),
+        @ApiResponse(responseCode = "404", description = "Certificate not found")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> verwijderCertificaat(
-            @Parameter(description = "ID van het certificaat", required = true)
+    public ResponseEntity<Void> deleteCertificate(
+            @Parameter(description = "ID of the certificate", required = true)
             @PathVariable Long id) {
         try {
-            certificateService.verwijderCertificaat(id);
+            certificateService.deleteCertificate(id);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -153,67 +153,67 @@ public class CertificateController {
     }
 
     @Operation(
-        summary = "Haal certificaten van een gebruiker op",
-        description = "Haalt alle certificaten op die gekoppeld zijn aan een specifieke gebruiker"
+        summary = "Get certificates for a user",
+        description = "Retrieves all certificates linked to a specific user"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Certificaten succesvol opgehaald"),
-        @ApiResponse(responseCode = "404", description = "Gebruiker niet gevonden")
+        @ApiResponse(responseCode = "200", description = "Certificates successfully retrieved"),
+        @ApiResponse(responseCode = "404", description = "User not found")
     })
-    @GetMapping("/gebruiker/{userId}")
-    public ResponseEntity<List<CertificateDTO>> getCertificatenVanGebruiker(
-            @Parameter(description = "ID van de gebruiker", required = true)
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<CertificateDTO>> getCertificatesForUser(
+            @Parameter(description = "ID of the user", required = true)
             @PathVariable Long userId) {
         try {
-            List<CertificateDTO> certificaten = certificateService.getCertificatenVanGebruiker(userId);
-            return ResponseEntity.ok(certificaten);
+            List<CertificateDTO> certificates = certificateService.getCertificatesForUser(userId);
+            return ResponseEntity.ok(certificates);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
     @Operation(
-        summary = "Haal verlopen certificaten op",
-        description = "Haalt alle certificaten op die verlopen zijn vóór een bepaalde datum"
+        summary = "Get expired certificates",
+        description = "Retrieves all certificates that have expired before a certain date"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Verlopen certificaten succesvol opgehaald")
+        @ApiResponse(responseCode = "200", description = "Expired certificates successfully retrieved")
     })
-    @GetMapping("/verlopen")
-    public ResponseEntity<List<CertificateDTO>> getVerlopenCertificaten(
-            @Parameter(description = "Referentiedatum (ISO format)", required = true, example = "2024-12-31")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate datum) {
-        List<CertificateDTO> verlopenCertificaten = certificateService.getVerlopenCertificaten(datum);
-        return ResponseEntity.ok(verlopenCertificaten);
+    @GetMapping("/expired")
+    public ResponseEntity<List<CertificateDTO>> getExpiredCertificates(
+            @Parameter(description = "Reference date (ISO format)", required = true, example = "2024-12-31")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        List<CertificateDTO> expiredCertificates = certificateService.getExpiredCertificates(date);
+        return ResponseEntity.ok(expiredCertificates);
     }
 
     @Operation(
-        summary = "Upload een certificaat bestand",
-        description = "Upload een PDF of afbeeldingsbestand voor een certificaat. " +
-                     "Toegestane bestandstypen: PDF, JPG, PNG."
+        summary = "Upload a certificate file",
+        description = "Upload a PDF or image file for a certificate. " +
+                     "Allowed file types: PDF, JPG, PNG."
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Bestand succesvol geüpload"),
-        @ApiResponse(responseCode = "400", description = "Ongeldig bestand of bestandsformaat"),
-        @ApiResponse(responseCode = "404", description = "Certificaat niet gevonden")
+        @ApiResponse(responseCode = "200", description = "File successfully uploaded"),
+        @ApiResponse(responseCode = "400", description = "Invalid file or file format"),
+        @ApiResponse(responseCode = "404", description = "Certificate not found")
     })
-    @PostMapping("/{id}/bestand")
-    public ResponseEntity<CertificateDTO> uploadCertificaatBestand(
+    @PostMapping("/{id}/file")
+    public ResponseEntity<CertificateDTO> uploadCertificateFile(
         @PathVariable Long id,
-        @RequestParam("bestand") MultipartFile bestand) {
+        @RequestParam("file") MultipartFile file) {
         try {
-            CertificateDTO certificate = certificateService.getCertificaatById(id);
+            CertificateDTO certificate = certificateService.getCertificateById(id);
             if (certificate == null) {
                 return ResponseEntity.notFound().build();
             }
 
             fileStorageService.validateFileType(
-                bestand, 
+                file, 
                 fileValidationConfig.getAllowedExtensions().toArray(String[]::new)
             );
             
-            String bestandsNaam = fileStorageService.storeFile(bestand);
-            CertificateDTO updatedCertificate = certificateService.updateCertificaatBestand(id, bestandsNaam);
+            String fileName = fileStorageService.storeFile(file);
+            CertificateDTO updatedCertificate = certificateService.updateCertificateFile(id, fileName);
             
             return ResponseEntity.ok(updatedCertificate);
         } catch (InvalidFileException e) {
@@ -224,25 +224,25 @@ public class CertificateController {
     }
 
     @Operation(
-        summary = "Download een certificaat bestand",
-        description = "Download het bestand dat bij een certificaat hoort"
+        summary = "Download a certificate file",
+        description = "Download the file associated with a certificate"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Bestand succesvol gedownload"),
-        @ApiResponse(responseCode = "404", description = "Bestand niet gevonden")
+        @ApiResponse(responseCode = "200", description = "File successfully downloaded"),
+        @ApiResponse(responseCode = "404", description = "File not found")
     })
-    @GetMapping("/{id}/bestand")
-    public ResponseEntity<Resource> downloadCertificaatBestand(
-            @Parameter(description = "ID van het certificaat", required = true)
+    @GetMapping("/{id}/file")
+    public ResponseEntity<Resource> downloadCertificateFile(
+            @Parameter(description = "ID of the certificate", required = true)
             @PathVariable Long id) {
         try {
-            CertificateDTO certificate = certificateService.getCertificaatById(id);
-            if (certificate == null || certificate.getBestandsPad() == null) {
+            CertificateDTO certificate = certificateService.getCertificateById(id);
+            if (certificate == null || certificate.getFilePath() == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            Resource resource = fileStorageService.loadFileAsResource(certificate.getBestandsPad());
-            String contentType = determineContentType(certificate.getBestandsPad());
+            Resource resource = fileStorageService.loadFileAsResource(certificate.getFilePath());
+            String contentType = determineContentType(certificate.getFilePath());
             
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
@@ -250,34 +250,34 @@ public class CertificateController {
                            "attachment; filename=\"" + resource.getFilename() + "\"")
                     .body(resource);
         } catch (FileStorageException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bestand niet gevonden");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found");
         }
     }
 
     @Operation(
-        summary = "Verwijder een certificaat bestand",
-        description = "Verwijdert het bestand dat bij een certificaat hoort"
+        summary = "Delete a certificate file",
+        description = "Deletes the file associated with a certificate"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Bestand succesvol verwijderd"),
-        @ApiResponse(responseCode = "404", description = "Bestand niet gevonden")
+        @ApiResponse(responseCode = "204", description = "File successfully deleted"),
+        @ApiResponse(responseCode = "404", description = "File not found")
     })
-    @DeleteMapping("/{id}/bestand")
-    public ResponseEntity<Void> verwijderCertificaatBestand(
-            @Parameter(description = "ID van het certificaat", required = true)
+    @DeleteMapping("/{id}/file")
+    public ResponseEntity<Void> deleteCertificateFile(
+            @Parameter(description = "ID of the certificate", required = true)
             @PathVariable Long id) {
         try {
-            CertificateDTO certificate = certificateService.getCertificaatById(id);
-            if (certificate == null || certificate.getBestandsPad() == null) {
+            CertificateDTO certificate = certificateService.getCertificateById(id);
+            if (certificate == null || certificate.getFilePath() == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            fileStorageService.deleteFile(certificate.getBestandsPad());
-            certificateService.updateCertificaatBestand(id, null);
+            fileStorageService.deleteFile(certificate.getFilePath());
+            certificateService.updateCertificateFile(id, null);
             
             return ResponseEntity.noContent().build();
         } catch (FileStorageException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bestand niet gevonden");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found");
         }
     }
 

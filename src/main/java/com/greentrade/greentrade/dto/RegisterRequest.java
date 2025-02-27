@@ -9,16 +9,16 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegisterRequest {
-    @NotBlank(message = "Naam is verplicht")
-    private String naam;
+    @NotBlank(message = "Name is required")
+    private String name;
     
-    @NotBlank(message = "Email is verplicht")
-    @Email(message = "Email moet geldig zijn")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email must be valid")
     private String email;
     
-    @NotBlank(message = "Wachtwoord is verplicht")
-    private String wachtwoord;
+    @NotBlank(message = "Password is required")
+    private String password;
     
     @Builder.Default
-    private String role = "ROLE_KOPER";
+    private String role = "ROLE_BUYER";
 }

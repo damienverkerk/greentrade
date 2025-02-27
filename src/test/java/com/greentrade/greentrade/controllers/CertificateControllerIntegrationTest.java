@@ -47,36 +47,36 @@ class CertificateControllerIntegrationTest {
     @MockBean
     private FileValidationConfig fileValidationConfig;
 
-    private CertificateDTO testCertificaat;
+    private CertificateDTO testCertificate;
 
     @BeforeEach
     @SuppressWarnings("unused")
     void setUp() {
-        testCertificaat = new CertificateDTO(1L, "ISO14001", "Bureau Veritas", 
+        testCertificate = new CertificateDTO(1L, "ISO14001", "Bureau Veritas", 
             LocalDate.now(), LocalDate.now().plusYears(1), 
-            "Milieu certificaat", "cert1.pdf", 1L);
+            "Environmental certificate", "cert1.pdf", 1L);
     }
 
     @Test
     @WithMockUser
-    void whenUploadCertificate_thenSuccess() throws Exception {
+    void whenUploadCertificateFile_thenSuccess() throws Exception {
         // Mock config
         when(fileValidationConfig.getAllowedExtensions())
             .thenReturn(Arrays.asList("pdf", "jpg", "jpeg", "png"));
         when(fileValidationConfig.getMaxFileSize())
             .thenReturn(10L * 1024 * 1024); // 10MB
         
-        when(certificateService.getCertificaatById(1L))
-            .thenReturn(testCertificaat);
-        // Maak testbestand
+        when(certificateService.getCertificateById(1L))
+            .thenReturn(testCertificate);
+        // Create test file
         MockMultipartFile file = new MockMultipartFile(
-            "bestand",          // naam parameter in controller
-            "test.pdf",         // originele bestandsnaam
+            "file",          // parameter name in controller
+            "test.pdf",      // original filename
             MediaType.APPLICATION_PDF_VALUE,
             "test content".getBytes()
         );
 
-        // Mock validaties en services
+        // Mock validations and services
         when(fileStorageService.validateFileType(any(), eq(new String[]{"pdf", "jpg", "jpeg", "png"})))
             .thenReturn(true);
         when(fileStorageService.storeFile(file)).thenReturn("stored_test.pdf");
@@ -84,58 +84,58 @@ class CertificateControllerIntegrationTest {
         CertificateDTO updatedCert = new CertificateDTO(
             1L, "ISO14001", "Bureau Veritas",
             LocalDate.now(), LocalDate.now().plusYears(1),
-            "Milieu certificaat", "stored_test.pdf", 1L
+            "Environmental certificate", "stored_test.pdf", 1L
         );
-        when(certificateService.updateCertificaatBestand(eq(1L), eq("stored_test.pdf")))
+        when(certificateService.updateCertificateFile(eq(1L), eq("stored_test.pdf")))
             .thenReturn(updatedCert);
 
-        // Voer test uit
-        mockMvc.perform(multipart("/api/certificaten/{id}/bestand", 1L)
+        // Run test
+        mockMvc.perform(multipart("/api/certificates/{id}/file", 1L)
                 .file(file)
                 .characterEncoding("UTF-8"))
                 .andDo(result -> System.out.println(result.getResponse().getContentAsString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.bestandsPad").value("stored_test.pdf"));
+                .andExpect(jsonPath("$.filePath").value("stored_test.pdf"));
     }
 
     @Test
     @WithMockUser
     void whenGetAllCertificates_thenSuccess() throws Exception {
-        when(certificateService.getAlleCertificaten())
-            .thenReturn(Arrays.asList(testCertificaat));
+        when(certificateService.getAllCertificates())
+            .thenReturn(Arrays.asList(testCertificate));
 
-        mockMvc.perform(get("/api/certificaten"))
+        mockMvc.perform(get("/api/certificates"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].naam").value("ISO14001"));
+                .andExpect(jsonPath("$[0].name").value("ISO14001"));
     }
 
     @Test
     @WithMockUser
     void whenCreateCertificate_thenSuccess() throws Exception {
-        when(certificateService.maakCertificaat(any(CertificateDTO.class)))
-            .thenReturn(testCertificaat);
+        when(certificateService.createCertificate(any(CertificateDTO.class)))
+            .thenReturn(testCertificate);
 
-        mockMvc.perform(post("/api/certificaten")
+        mockMvc.perform(post("/api/certificates")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(testCertificaat)))
+                .content(objectMapper.writeValueAsString(testCertificate)))
                 .andExpect(status().isOk());
     }
 
     @Test
     @WithMockUser
-    void whenGetVerlopenCertificaten_thenSuccess() throws Exception {
-        when(certificateService.getVerlopenCertificaten(any()))
-            .thenReturn(Arrays.asList(testCertificaat));
+    void whenGetExpiredCertificates_thenSuccess() throws Exception {
+        when(certificateService.getExpiredCertificates(any()))
+            .thenReturn(Arrays.asList(testCertificate));
 
-        mockMvc.perform(get("/api/certificaten/verlopen")
-                .param("datum", LocalDate.now().toString()))
+        mockMvc.perform(get("/api/certificates/expired")
+                .param("date", LocalDate.now().toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].naam").value("ISO14001"));
+                .andExpect(jsonPath("$[0].name").value("ISO14001"));
     }
 
     @Test
     void whenUnauthorizedAccess_thenForbidden() throws Exception {
-        mockMvc.perform(get("/api/certificaten"))
+        mockMvc.perform(get("/api/certificates"))
                 .andExpect(status().isForbidden());
     }
 }

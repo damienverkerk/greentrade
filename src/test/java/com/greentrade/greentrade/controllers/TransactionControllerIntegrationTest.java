@@ -39,101 +39,101 @@ class TransactionControllerIntegrationTest {
     @MockBean
     private TransactionService transactionService;
 
-    private TransactionDTO testTransactie;
+    private TransactionDTO testTransaction;
 
     @BeforeEach
     @SuppressWarnings("unused")
     void setUp() {
-        testTransactie = new TransactionDTO(
+        testTransaction = new TransactionDTO(
             1L,
-            1L, // koperId
+            1L, // buyerId
             1L, // productId
             new BigDecimal("299.99"),
             LocalDateTime.now(),
-            "IN_BEHANDELING"
+            "PROCESSING"
         );
     }
 
     @Test
     @WithMockUser
-    void whenGetAlleTransacties_thenSuccess() throws Exception {
-        when(transactionService.getAlleTransacties())
-            .thenReturn(Arrays.asList(testTransactie));
+    void whenGetAllTransactions_thenSuccess() throws Exception {
+        when(transactionService.getAllTransactions())
+            .thenReturn(Arrays.asList(testTransaction));
 
-        mockMvc.perform(get("/api/transacties"))
+        mockMvc.perform(get("/api/transactions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].status").value("IN_BEHANDELING"))
-                .andExpect(jsonPath("$[0].bedrag").value(299.99));
+                .andExpect(jsonPath("$[0].status").value("PROCESSING"))
+                .andExpect(jsonPath("$[0].amount").value(299.99));
     }
 
     @Test
-    @WithMockUser(roles = "KOPER")
-    void whenMaakTransactie_thenSuccess() throws Exception {
-        when(transactionService.maakTransactie(any(TransactionDTO.class)))
-            .thenReturn(testTransactie);
+    @WithMockUser(roles = "BUYER")
+    void whenCreateTransaction_thenSuccess() throws Exception {
+        when(transactionService.createTransaction(any(TransactionDTO.class)))
+            .thenReturn(testTransaction);
 
-        mockMvc.perform(post("/api/transacties")
+        mockMvc.perform(post("/api/transactions")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(testTransactie)))
+                .content(objectMapper.writeValueAsString(testTransaction)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value("IN_BEHANDELING"));
+                .andExpect(jsonPath("$.status").value("PROCESSING"));
     }
 
     @Test
     @WithMockUser
-    void whenUpdateTransactieStatus_thenSuccess() throws Exception {
-        TransactionDTO updatedTransactie = new TransactionDTO(
+    void whenUpdateTransactionStatus_thenSuccess() throws Exception {
+        TransactionDTO updatedTransaction = new TransactionDTO(
             1L, 1L, 1L, new BigDecimal("299.99"),
-            LocalDateTime.now(), "VOLTOOID"
+            LocalDateTime.now(), "COMPLETED"
         );
 
-        when(transactionService.updateTransactieStatus(anyLong(), any()))
-            .thenReturn(updatedTransactie);
+        when(transactionService.updateTransactionStatus(anyLong(), any()))
+            .thenReturn(updatedTransaction);
 
-        mockMvc.perform(put("/api/transacties/{id}/status", 1L)
-                .param("nieuweStatus", "VOLTOOID"))
+        mockMvc.perform(put("/api/transactions/{id}/status", 1L)
+                .param("newStatus", "COMPLETED"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("VOLTOOID"));
+                .andExpect(jsonPath("$.status").value("COMPLETED"));
     }
 
     @Test
-    @WithMockUser(roles = "KOPER") 
-    void whenGetTransactiesDoorKoper_thenSuccess() throws Exception {
-        when(transactionService.getTransactiesDoorKoper(anyLong()))
-            .thenReturn(Arrays.asList(testTransactie));
+    @WithMockUser(roles = "BUYER") 
+    void whenGetTransactionsByBuyer_thenSuccess() throws Exception {
+        when(transactionService.getTransactionsByBuyer(anyLong()))
+            .thenReturn(Arrays.asList(testTransaction));
     
-        mockMvc.perform(get("/api/transacties/koper/{koperId}", 1L))
+        mockMvc.perform(get("/api/transactions/buyer/{buyerId}", 1L))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].koperId").value(1));
+                .andExpect(jsonPath("$[0].buyerId").value(1));
     }
 
     @Test
     @WithMockUser
-    void whenGetTransactiesDoorVerkoper_thenSuccess() throws Exception {
-        when(transactionService.getTransactiesDoorVerkoper(anyLong()))
-            .thenReturn(Arrays.asList(testTransactie));
+    void whenGetTransactionsBySeller_thenSuccess() throws Exception {
+        when(transactionService.getTransactionsBySeller(anyLong()))
+            .thenReturn(Arrays.asList(testTransaction));
 
-        mockMvc.perform(get("/api/transacties/verkoper/{verkoperId}", 1L))
+        mockMvc.perform(get("/api/transactions/seller/{sellerId}", 1L))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].koperId").value(1));
+                .andExpect(jsonPath("$[0].buyerId").value(1));
     }
 
     @Test
     @WithMockUser
-    void whenGetTransactiesTussenData_thenSuccess() throws Exception {
-        when(transactionService.getTransactiesTussenData(any(), any()))
-            .thenReturn(Arrays.asList(testTransactie));
+    void whenGetTransactionsBetweenDates_thenSuccess() throws Exception {
+        when(transactionService.getTransactionsBetweenDates(any(), any()))
+            .thenReturn(Arrays.asList(testTransaction));
 
-        mockMvc.perform(get("/api/transacties/periode")
+        mockMvc.perform(get("/api/transactions/period")
                 .param("start", LocalDateTime.now().minusDays(7).toString())
-                .param("eind", LocalDateTime.now().toString()))
+                .param("end", LocalDateTime.now().toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].status").value("IN_BEHANDELING"));
+                .andExpect(jsonPath("$[0].status").value("PROCESSING"));
     }
 
     @Test
     void whenUnauthorizedAccess_thenForbidden() throws Exception {
-        mockMvc.perform(get("/api/transacties"))
+        mockMvc.perform(get("/api/transactions"))
                 .andExpect(status().isForbidden());
     }
 }

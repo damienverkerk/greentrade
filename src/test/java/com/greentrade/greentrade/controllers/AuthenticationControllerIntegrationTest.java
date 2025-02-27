@@ -36,10 +36,10 @@ class AuthenticationControllerIntegrationTest {
     @Test
     void whenRegisterUser_thenReturn200() throws Exception {
         RegisterRequest request = RegisterRequest.builder()
-            .naam("Test User")
+            .name("Test User")
             .email("test@example.com")
-            .wachtwoord("Test123!@#")
-            .role(Role.ROLE_KOPER.toString())
+            .password("Test123!@#")
+            .role(Role.ROLE_BUYER.toString())
             .build();
 
         AuthResponse mockResponse = AuthResponse.builder()
@@ -60,10 +60,10 @@ class AuthenticationControllerIntegrationTest {
     @Test
     void whenRegisterUserWithInvalidData_thenReturn400() throws Exception {
         RegisterRequest request = RegisterRequest.builder()
-            .naam("")
+            .name("")
             .email("invalid-email")
-            .wachtwoord("")
-            .role(Role.ROLE_KOPER.toString())
+            .password("")
+            .role(Role.ROLE_BUYER.toString())
             .build();
 
         mockMvc.perform(post("/api/auth/register")

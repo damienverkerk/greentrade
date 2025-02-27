@@ -9,37 +9,37 @@ import jakarta.validation.constraints.Size;
 public class MessageDTO {
     private Long id;
 
-    @NotNull(message = "Afzender ID is verplicht")
-    private Long afzenderId;
+    @NotNull(message = "Sender ID is required")
+    private Long senderId;
 
-    @NotNull(message = "Ontvanger ID is verplicht")
-    private Long ontvangerId;
+    @NotNull(message = "Receiver ID is required")
+    private Long receiverId;
 
-    @NotBlank(message = "Onderwerp is verplicht")
-    @Size(max = 100, message = "Onderwerp mag niet langer zijn dan 100 tekens")
-    private String onderwerp;
+    @NotBlank(message = "Subject is required")
+    @Size(max = 100, message = "Subject cannot be longer than 100 characters")
+    private String subject;
 
-    @NotBlank(message = "Inhoud is verplicht")
-    @Size(max = 2000, message = "Inhoud mag niet langer zijn dan 2000 tekens")
-    private String inhoud;
+    @NotBlank(message = "Content is required")
+    @Size(max = 2000, message = "Content cannot be longer than 2000 characters")
+    private String content;
 
-    private LocalDateTime datumTijd;
+    private LocalDateTime timestamp;
 
-    private boolean gelezen;
+    private boolean read;
 
     // Constructors
     public MessageDTO() {
     }
 
-    public MessageDTO(Long id, Long afzenderId, Long ontvangerId, String onderwerp, 
-                     String inhoud, LocalDateTime datumTijd, boolean gelezen) {
+    public MessageDTO(Long id, Long senderId, Long receiverId, String subject, 
+                     String content, LocalDateTime timestamp, boolean read) {
         this.id = id;
-        this.afzenderId = afzenderId;
-        this.ontvangerId = ontvangerId;
-        this.onderwerp = onderwerp;
-        this.inhoud = inhoud;
-        this.datumTijd = datumTijd;
-        this.gelezen = gelezen;
+        this.senderId = senderId;
+        this.receiverId = receiverId;
+        this.subject = subject;
+        this.content = content;
+        this.timestamp = timestamp;
+        this.read = read;
     }
 
     // Getters and Setters
@@ -51,51 +51,51 @@ public class MessageDTO {
         this.id = id;
     }
 
-    public Long getAfzenderId() {
-        return afzenderId;
+    public Long getSenderId() {
+        return senderId;
     }
 
-    public void setAfzenderId(Long afzenderId) {
-        this.afzenderId = afzenderId;
+    public void setSenderId(Long senderId) {
+        this.senderId = senderId;
     }
 
-    public Long getOntvangerId() {
-        return ontvangerId;
+    public Long getReceiverId() {
+        return receiverId;
     }
 
-    public void setOntvangerId(Long ontvangerId) {
-        this.ontvangerId = ontvangerId;
+    public void setReceiverId(Long receiverId) {
+        this.receiverId = receiverId;
     }
 
-    public String getOnderwerp() {
-        return onderwerp;
+    public String getSubject() {
+        return subject;
     }
 
-    public void setOnderwerp(String onderwerp) {
-        this.onderwerp = onderwerp;
+    public void setSubject(String subject) {
+        this.subject = subject;
     }
 
-    public String getInhoud() {
-        return inhoud;
+    public String getContent() {
+        return content;
     }
 
-    public void setInhoud(String inhoud) {
-        this.inhoud = inhoud;
+    public void setContent(String content) {
+        this.content = content;
     }
 
-    public LocalDateTime getDatumTijd() {
-        return datumTijd;
+    public LocalDateTime getTimestamp() {
+        return timestamp;
     }
 
-    public void setDatumTijd(LocalDateTime datumTijd) {
-        this.datumTijd = datumTijd;
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
     }
 
-    public boolean isGelezen() {
-        return gelezen;
+    public boolean isRead() {
+        return read;
     }
 
-    public void setGelezen(boolean gelezen) {
-        this.gelezen = gelezen;
+    public void setRead(boolean read) {
+        this.read = read;
     }
 }

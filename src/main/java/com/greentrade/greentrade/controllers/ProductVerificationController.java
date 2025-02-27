@@ -25,7 +25,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/verifications")
-@Tag(name = "Product Verificaties", description = "Endpoints voor het beheren van product verificaties")
+@Tag(name = "Product Verifications", description = "Endpoints for managing product verifications")
 public class ProductVerificationController {
     private final ProductVerificationService verificationService;
 
@@ -34,47 +34,47 @@ public class ProductVerificationController {
     }
 
     @Operation(
-        summary = "Dien product in voor verificatie",
-        description = "Verkopers kunnen hun producten indienen voor duurzaamheidsverificatie"
+        summary = "Submit product for verification",
+        description = "Sellers can submit their products for sustainability verification"
     )
-    @ApiResponse(responseCode = "200", description = "Product succesvol ingediend voor verificatie")
-    @ApiResponse(responseCode = "400", description = "Product heeft al een lopende verificatie")
-    @ApiResponse(responseCode = "404", description = "Product niet gevonden")
+    @ApiResponse(responseCode = "200", description = "Product successfully submitted for verification")
+    @ApiResponse(responseCode = "400", description = "Product already has a pending verification")
+    @ApiResponse(responseCode = "404", description = "Product not found")
     @PostMapping("/products/{productId}/submit")
-    @PreAuthorize("hasRole('VERKOPER')")
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ProductVerificationDTO> submitForVerification(@PathVariable Long productId) {
         try {
             return ResponseEntity.ok(verificationService.submitForVerification(productId));
         } catch (ProductNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (DuplicateVerificationException e) {
-            throw e;  // Laat deze doorgaan naar de global exception handler
+            throw e;  // Let this be handled by the global exception handler
         }
     }
     @Operation(
-        summary = "Beoordeel product verificatie",
-        description = "Administrators kunnen ingediende producten beoordelen"
+        summary = "Review product verification",
+        description = "Administrators can review submitted products"
     )
-    @ApiResponse(responseCode = "200", description = "Verificatie succesvol beoordeeld")
-    @ApiResponse(responseCode = "400", description = "Ongeldige beoordelingsgegevens")
-    @ApiResponse(responseCode = "404", description = "Verificatie niet gevonden")
+    @ApiResponse(responseCode = "200", description = "Verification successfully reviewed")
+    @ApiResponse(responseCode = "400", description = "Invalid review data")
+    @ApiResponse(responseCode = "404", description = "Verification not found")
     @PostMapping("/{verificationId}/review")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductVerificationDTO> reviewProduct(
-            @Parameter(description = "ID van de verificatie", required = true)
+            @Parameter(description = "ID of the verification", required = true)
             @PathVariable Long verificationId,
-            @Parameter(description = "Beoordelingsgegevens", required = true)
+            @Parameter(description = "Review data", required = true)
             @Valid @RequestBody ProductVerificationDTO dto,
-            @Parameter(description = "ID van de beoordelaar", required = true)
+            @Parameter(description = "ID of the reviewer", required = true)
             @RequestParam Long reviewerId) {
         return ResponseEntity.ok(verificationService.reviewProduct(verificationId, dto, reviewerId));
     }
 
     @Operation(
-        summary = "Haal openstaande verificaties op",
-        description = "Toont alle verificaties met status PENDING"
+        summary = "Get pending verifications",
+        description = "Shows all verifications with PENDING status"
     )
-    @ApiResponse(responseCode = "200", description = "Openstaande verificaties succesvol opgehaald")
+    @ApiResponse(responseCode = "200", description = "Pending verifications successfully retrieved")
     @GetMapping("/pending")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<ProductVerificationDTO>> getPendingVerifications() {
@@ -82,14 +82,14 @@ public class ProductVerificationController {
     }
 
     @Operation(
-        summary = "Haal verificaties op voor een product",
-        description = "Toont alle verificaties voor een specifiek product"
+        summary = "Get verifications for a product",
+        description = "Shows all verifications for a specific product"
     )
-    @ApiResponse(responseCode = "200", description = "Verificaties succesvol opgehaald")
+    @ApiResponse(responseCode = "200", description = "Verifications successfully retrieved")
     @GetMapping("/products/{productId}")
-    @PreAuthorize("hasAnyRole('VERKOPER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     public ResponseEntity<List<ProductVerificationDTO>> getVerificationsByProduct(
-            @Parameter(description = "ID van het product", required = true)
+            @Parameter(description = "ID of the product", required = true)
             @PathVariable Long productId) {
         return ResponseEntity.ok(verificationService.getVerificationsByProduct(productId));
     }

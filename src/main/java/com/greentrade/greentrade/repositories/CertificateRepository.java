@@ -12,5 +12,5 @@ import com.greentrade.greentrade.models.User;
 @Repository
 public interface CertificateRepository extends JpaRepository<Certificate, Long> {
     List<Certificate> findByUser(User user);
-    List<Certificate> findByVervaldatumBefore(LocalDate datum);
+    List<Certificate> findByExpiryDateBefore(LocalDate date);
 }

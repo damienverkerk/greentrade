@@ -39,9 +39,9 @@ public class ProductVerificationService {
     @Transactional
     public ProductVerificationDTO submitForVerification(Long productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException(productId));  // Deze exception
+                .orElseThrow(() -> new ProductNotFoundException(productId));
 
-        // Check of er al een lopende verificatie is
+        // Check if there's already an ongoing verification
         verificationRepository.findFirstByProductOrderBySubmissionDateDesc(product)
                 .ifPresent(existingVerification -> {
                     if (existingVerification.getStatus() == VerificationStatus.PENDING 
@@ -60,25 +60,25 @@ public class ProductVerificationService {
 
 @Transactional
 public ProductVerificationDTO reviewProduct(Long verificationId, ProductVerificationDTO dto, Long reviewerId) {
-    // Controleer verificatie
+    // Check verification
     ProductVerification verification = verificationRepository.findById(verificationId)
             .orElseThrow(() -> new VerificationNotFoundException(verificationId));
 
     if (verification.getStatus() != VerificationStatus.PENDING 
         && verification.getStatus() != VerificationStatus.IN_REVIEW) {
-        throw new InvalidVerificationStatusException("Deze verificatie kan niet meer worden beoordeeld");
+        throw new InvalidVerificationStatusException("This verification can no longer be reviewed");
     }
 
-    // Controleer reviewer
+    // Check reviewer
     User reviewer = userRepository.findById(reviewerId)
-            .orElseThrow(() -> new ProductVerificationException("Reviewer niet gevonden met ID: " + reviewerId));
+            .orElseThrow(() -> new ProductVerificationException("Reviewer not found with ID: " + reviewerId));
 
-    // Bij goedkeuring, check score
+    // For approval, check score
     if (dto.getStatus() == VerificationStatus.APPROVED && dto.getSustainabilityScore() == null) {
-        throw new ProductVerificationException("Duurzaamheidsscore is verplicht bij goedkeuring");
+        throw new ProductVerificationException("Sustainability score is required for approval");
     }
 
-    // Update verificatie
+    // Update verification
     verification.setStatus(dto.getStatus());
     verification.setReviewerNotes(dto.getReviewerNotes());
     verification.setReviewer(reviewer);
@@ -87,7 +87,7 @@ public ProductVerificationDTO reviewProduct(Long verificationId, ProductVerifica
     verification.setRejectionReason(dto.getRejectionReason());
 
     if (dto.getStatus() == VerificationStatus.APPROVED) {
-        verification.getProduct().setDuurzaamheidsScore(dto.getSustainabilityScore());
+        verification.getProduct().setSustainabilityScore(dto.getSustainabilityScore());
         productRepository.save(verification.getProduct());
     }
 
@@ -101,7 +101,7 @@ public ProductVerificationDTO reviewProduct(Long verificationId, ProductVerifica
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            throw new ProductVerificationException("Ophalen van verificaties mislukt: " + e.getMessage());
+            throw new ProductVerificationException("Failed to retrieve verifications: " + e.getMessage());
         }
     }
 
@@ -112,7 +112,7 @@ public ProductVerificationDTO reviewProduct(Long verificationId, ProductVerifica
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            throw new ProductVerificationException("Ophalen van product verificaties mislukt: " + e.getMessage());
+            throw new ProductVerificationException("Failed to retrieve product verifications: " + e.getMessage());
         }
     }
 

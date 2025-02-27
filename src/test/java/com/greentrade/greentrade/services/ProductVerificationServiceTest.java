@@ -61,13 +61,13 @@ class ProductVerificationServiceTest {
     void setUp() {
         testUser = User.builder()
             .id(1L)
-            .naam("Test Verkoper")
+            .name("Test Seller")
             .build();
 
         testProduct = new Product();
         testProduct.setId(1L);
-        testProduct.setNaam("Test Product");
-        testProduct.setVerkoper(testUser);
+        testProduct.setName("Test Product");
+        testProduct.setSeller(testUser);
 
         testVerification = new ProductVerification();
         testVerification.setId(1L);

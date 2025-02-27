@@ -29,80 +29,80 @@ public class CertificateService {
         this.fileStorageService = fileStorageService;
     }
 
-    public List<CertificateDTO> getAlleCertificaten() {
+    public List<CertificateDTO> getAllCertificates() {
         return certificateRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public CertificateDTO getCertificaatById(Long id) {
+    public CertificateDTO getCertificateById(Long id) {
         return certificateRepository.findById(id)
                 .map(this::convertToDTO)
                 .orElse(null);
     }
 
-    public List<CertificateDTO> getCertificatenVanGebruiker(Long userId) {
+    public List<CertificateDTO> getCertificatesForUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Gebruiker niet gevonden met id: " + userId));
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         
         return certificateRepository.findByUser(user).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<CertificateDTO> getVerlopenCertificaten(LocalDate datum) {
-        return certificateRepository.findByVervaldatumBefore(datum).stream()
+    public List<CertificateDTO> getExpiredCertificates(LocalDate date) {
+        return certificateRepository.findByExpiryDateBefore(date).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public CertificateDTO maakCertificaat(CertificateDTO certificateDTO) {
+    public CertificateDTO createCertificate(CertificateDTO certificateDTO) {
         Certificate certificate = convertToEntity(certificateDTO);
         Certificate savedCertificate = certificateRepository.save(certificate);
         return convertToDTO(savedCertificate);
     }
 
-    public CertificateDTO updateCertificaat(Long id, CertificateDTO certificateDTO) {
+    public CertificateDTO updateCertificate(Long id, CertificateDTO certificateDTO) {
         Certificate certificate = certificateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Certificaat niet gevonden met id: " + id));
+                .orElseThrow(() -> new RuntimeException("Certificate not found with id: " + id));
 
         updateCertificateFromDTO(certificate, certificateDTO);
         Certificate updatedCertificate = certificateRepository.save(certificate);
         return convertToDTO(updatedCertificate);
     }
 
-    public void verwijderCertificaat(Long id) {
+    public void deleteCertificate(Long id) {
         Certificate certificate = certificateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Certificaat niet gevonden met id: " + id));
+                .orElseThrow(() -> new RuntimeException("Certificate not found with id: " + id));
 
-        // Verwijder het bestand als het bestaat
-        if (certificate.getBestandsPad() != null) {
+        // Delete the file if it exists
+        if (certificate.getFilePath() != null) {
             try {
-                fileStorageService.deleteFile(certificate.getBestandsPad());
+                fileStorageService.deleteFile(certificate.getFilePath());
             } catch (RuntimeException e) {
-                // Log de fout, maar ga door met verwijderen van het certificaat
-                System.err.println("Kon bestand niet verwijderen: " + e.getMessage());
+                // Log the error, but continue deleting the certificate
+                System.err.println("Could not delete file: " + e.getMessage());
             }
         }
 
         certificateRepository.deleteById(id);
     }
 
-    public CertificateDTO updateCertificaatBestand(Long id, String bestandsNaam) {
+    public CertificateDTO updateCertificateFile(Long id, String fileName) {
         Certificate certificate = certificateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Certificaat niet gevonden met id: " + id));
+                .orElseThrow(() -> new RuntimeException("Certificate not found with id: " + id));
 
-        // Verwijder het oude bestand als het bestaat
-        if (certificate.getBestandsPad() != null) {
+        // Delete the old file if it exists
+        if (certificate.getFilePath() != null) {
             try {
-                fileStorageService.deleteFile(certificate.getBestandsPad());
+                fileStorageService.deleteFile(certificate.getFilePath());
             } catch (RuntimeException e) {
-                // Log de fout, maar ga door met updaten
-                System.err.println("Kon oud bestand niet verwijderen: " + e.getMessage());
+                // Log the error, but continue with the update
+                System.err.println("Could not delete old file: " + e.getMessage());
             }
         }
 
-        certificate.setBestandsPad(bestandsNaam);
+        certificate.setFilePath(fileName);
         Certificate updatedCertificate = certificateRepository.save(certificate);
         return convertToDTO(updatedCertificate);
     }
@@ -110,12 +110,12 @@ public class CertificateService {
     private CertificateDTO convertToDTO(Certificate certificate) {
         return new CertificateDTO(
             certificate.getId(),
-            certificate.getNaam(),
-            certificate.getUitgever(),
-            certificate.getUitgifteDatum(),
-            certificate.getVervaldatum(),
-            certificate.getBeschrijving(),
-            certificate.getBestandsPad(),
+            certificate.getName(),
+            certificate.getIssuer(),
+            certificate.getIssueDate(),
+            certificate.getExpiryDate(),
+            certificate.getDescription(),
+            certificate.getFilePath(),
             certificate.getUser() != null ? certificate.getUser().getId() : null
         );
     }
@@ -127,20 +127,20 @@ public class CertificateService {
     }
 
     private void updateCertificateFromDTO(Certificate certificate, CertificateDTO dto) {
-        certificate.setNaam(dto.getNaam());
-        certificate.setUitgever(dto.getUitgever());
-        certificate.setUitgifteDatum(dto.getUitgifteDatum());
-        certificate.setVervaldatum(dto.getVervaldatum());
-        certificate.setBeschrijving(dto.getBeschrijving());
+        certificate.setName(dto.getName());
+        certificate.setIssuer(dto.getIssuer());
+        certificate.setIssueDate(dto.getIssueDate());
+        certificate.setExpiryDate(dto.getExpiryDate());
+        certificate.setDescription(dto.getDescription());
         
-        // Behoud het huidige bestandspad tenzij expliciet gewijzigd
-        if (dto.getBestandsPad() != null) {
-            certificate.setBestandsPad(dto.getBestandsPad());
+        // Keep the current file path unless explicitly changed
+        if (dto.getFilePath() != null) {
+            certificate.setFilePath(dto.getFilePath());
         }
 
         if (dto.getUserId() != null) {
             User user = userRepository.findById(dto.getUserId())
-                    .orElseThrow(() -> new RuntimeException("Gebruiker niet gevonden met id: " + dto.getUserId()));
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
             certificate.setUser(user);
         }
     }

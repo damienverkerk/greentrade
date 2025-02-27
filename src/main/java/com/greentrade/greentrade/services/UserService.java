@@ -41,7 +41,7 @@ public class UserService {
     public UserDTO updateUser(Long id, UserDTO userDTO) {
         return userRepository.findById(id)
                 .map(user -> {
-                    user.setNaam(userDTO.getNaam());
+                    user.setName(userDTO.getName());
                     user.setEmail(userDTO.getEmail());
                     return convertToDTO(userRepository.save(user));
                 })
@@ -53,12 +53,12 @@ public class UserService {
     }
 
     private UserDTO convertToDTO(User user) {
-        return new UserDTO(user.getId(), user.getNaam(), user.getEmail(), user.getRole().toString());
+        return new UserDTO(user.getId(), user.getName(), user.getEmail(), user.getRole().toString());
     }
 
     private User convertToEntity(UserDTO userDTO) {
         User user = new User();
-        user.setNaam(userDTO.getNaam());
+        user.setName(userDTO.getName());
         user.setEmail(userDTO.getEmail());
         return user;
     }

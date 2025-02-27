@@ -4,26 +4,26 @@ import java.time.LocalDate;
 
 public class CertificateDTO {
     private Long id;
-    private String naam;
-    private String uitgever;
-    private LocalDate uitgifteDatum;
-    private LocalDate vervaldatum;
-    private String beschrijving;
-    private String bestandsPad;
+    private String name;
+    private String issuer;
+    private LocalDate issueDate;
+    private LocalDate expiryDate;
+    private String description;
+    private String filePath;
     private Long userId;
 
     // Constructors
     public CertificateDTO() {}
 
-    public CertificateDTO(Long id, String naam, String uitgever, LocalDate uitgifteDatum, 
-                          LocalDate vervaldatum, String beschrijving, String bestandsPad, Long userId) {
+    public CertificateDTO(Long id, String name, String issuer, LocalDate issueDate, 
+                          LocalDate expiryDate, String description, String filePath, Long userId) {
         this.id = id;
-        this.naam = naam;
-        this.uitgever = uitgever;
-        this.uitgifteDatum = uitgifteDatum;
-        this.vervaldatum = vervaldatum;
-        this.beschrijving = beschrijving;
-        this.bestandsPad = bestandsPad;
+        this.name = name;
+        this.issuer = issuer;
+        this.issueDate = issueDate;
+        this.expiryDate = expiryDate;
+        this.description = description;
+        this.filePath = filePath;
         this.userId = userId;
     }
 
@@ -36,52 +36,52 @@ public class CertificateDTO {
         this.id = id;
     }
 
-    public String getNaam() {
-        return naam;
+    public String getName() {
+        return name;
     }
 
-    public void setNaam(String naam) {
-        this.naam = naam;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public String getUitgever() {
-        return uitgever;
+    public String getIssuer() {
+        return issuer;
     }
 
-    public void setUitgever(String uitgever) {
-        this.uitgever = uitgever;
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
     }
 
-    public LocalDate getUitgifteDatum() {
-        return uitgifteDatum;
+    public LocalDate getIssueDate() {
+        return issueDate;
     }
 
-    public void setUitgifteDatum(LocalDate uitgifteDatum) {
-        this.uitgifteDatum = uitgifteDatum;
+    public void setIssueDate(LocalDate issueDate) {
+        this.issueDate = issueDate;
     }
 
-    public LocalDate getVervaldatum() {
-        return vervaldatum;
+    public LocalDate getExpiryDate() {
+        return expiryDate;
     }
 
-    public void setVervaldatum(LocalDate vervaldatum) {
-        this.vervaldatum = vervaldatum;
+    public void setExpiryDate(LocalDate expiryDate) {
+        this.expiryDate = expiryDate;
     }
 
-    public String getBeschrijving() {
-        return beschrijving;
+    public String getDescription() {
+        return description;
     }
 
-    public void setBeschrijving(String beschrijving) {
-        this.beschrijving = beschrijving;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public String getBestandsPad() {
-        return bestandsPad;
+    public String getFilePath() {
+        return filePath;
     }
 
-    public void setBestandsPad(String bestandsPad) {
-        this.bestandsPad = bestandsPad;
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
     public Long getUserId() {

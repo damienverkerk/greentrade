@@ -39,29 +39,29 @@ public class ProductService {
                 .orElseThrow(() -> new ProductNotFoundException(id));
     }
 
-    public List<ProductDTO> getProductsByVerkoper(Long verkoperId) {
-        User verkoper = userRepository.findById(verkoperId)
-                .orElseThrow(() -> new UserNotFoundException(verkoperId));
-        return productRepository.findByVerkoper(verkoper).stream()
+    public List<ProductDTO> getProductsBySeller(Long sellerId) {
+        User seller = userRepository.findById(sellerId)
+                .orElseThrow(() -> new UserNotFoundException(sellerId));
+        return productRepository.findBySeller(seller).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<ProductDTO> searchProductsByName(String naam) {
-        if (naam == null || naam.trim().isEmpty()) {
-            throw new InvalidProductDataException("naam", "Zoekopdracht mag niet leeg zijn");
+    public List<ProductDTO> searchProductsByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new InvalidProductDataException("name", "Search query cannot be empty");
         }
-        return productRepository.findByNaamContainingIgnoreCase(naam).stream()
+        return productRepository.findByNameContainingIgnoreCase(name).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<ProductDTO> getProductsByDuurzaamheidsScore(Integer minimumScore) {
+    public List<ProductDTO> getProductsBySustainabilityScore(Integer minimumScore) {
         if (minimumScore == null || minimumScore < 0 || minimumScore > 100) {
-            throw new InvalidProductDataException("duurzaamheidsScore", 
-                "Score moet tussen 0 en 100 liggen");
+            throw new InvalidProductDataException("sustainabilityScore", 
+                "Score must be between 0 and 100");
         }
-        return productRepository.findByDuurzaamheidsScoreGreaterThanEqual(minimumScore).stream()
+        return productRepository.findBySustainabilityScoreGreaterThanEqual(minimumScore).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -97,48 +97,49 @@ public class ProductService {
     }
 
     private void validateProductData(ProductDTO productDTO) {
-        if (productDTO.getNaam() == null || productDTO.getNaam().trim().isEmpty()) {
-            throw new InvalidProductDataException("naam", "Naam is verplicht");
+        if (productDTO.getName() == null || productDTO.getName().trim().isEmpty()) {
+            throw new InvalidProductDataException("name", "Name is required");
         }
-        if (productDTO.getPrijs() == null || productDTO.getPrijs().compareTo(java.math.BigDecimal.ZERO) <= 0) {
-            throw new InvalidProductDataException("prijs", "Prijs moet groter zijn dan 0");
+        if (productDTO.getPrice() == null || productDTO.getPrice().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new InvalidProductDataException("price", "Price must be greater than 0");
         }
-        if (productDTO.getDuurzaamheidsScore() != null && 
-            (productDTO.getDuurzaamheidsScore() < 0 || productDTO.getDuurzaamheidsScore() > 100)) {
-            throw new InvalidProductDataException("duurzaamheidsScore", 
-                "Duurzaamheidsscore moet tussen 0 en 100 liggen");
+        if (productDTO.getSustainabilityScore() != null && 
+            (productDTO.getSustainabilityScore() < 0 || productDTO.getSustainabilityScore() > 100)) {
+            throw new InvalidProductDataException("sustainabilityScore", 
+                "Sustainability score must be between 0 and 100");
         }
     }
 
     private ProductDTO convertToDTO(Product product) {
         return new ProductDTO(
                 product.getId(),
-                product.getNaam(),
-                product.getBeschrijving(),
-                product.getPrijs(),
-                product.getDuurzaamheidsScore(),
-                product.getDuurzaamheidsCertificaat(),
-                product.getVerkoper().getId()
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getSustainabilityScore(),
+                product.getSustainabilityCertificate(),
+                product.getSeller().getId()
         );
     }
 
     private Product convertToEntity(ProductDTO productDTO) {
         Product product = new Product();
-        updateProductFromDTO(product, productDTO);
-        return product;
+        return updateProductFromDTO(product, productDTO);
     }
 
-    private void updateProductFromDTO(Product product, ProductDTO productDTO) {
-        product.setNaam(productDTO.getNaam());
-        product.setBeschrijving(productDTO.getBeschrijving());
-        product.setPrijs(productDTO.getPrijs());
-        product.setDuurzaamheidsScore(productDTO.getDuurzaamheidsScore());
-        product.setDuurzaamheidsCertificaat(productDTO.getDuurzaamheidsCertificaat());
+    private Product updateProductFromDTO(Product product, ProductDTO productDTO) {
+        product.setName(productDTO.getName());
+        product.setDescription(productDTO.getDescription());
+        product.setPrice(productDTO.getPrice());
+        product.setSustainabilityScore(productDTO.getSustainabilityScore());
+        product.setSustainabilityCertificate(productDTO.getSustainabilityCertificate());
         
-        if (productDTO.getVerkoperId() != null) {
-            User verkoper = userRepository.findById(productDTO.getVerkoperId())
-                    .orElseThrow(() -> new UserNotFoundException(productDTO.getVerkoperId()));
-            product.setVerkoper(verkoper);
+        if (productDTO.getSellerId() != null) {
+            User seller = userRepository.findById(productDTO.getSellerId())
+                    .orElseThrow(() -> new UserNotFoundException(productDTO.getSellerId()));
+            product.setSeller(seller);
         }
+        
+        return product;
     }
 }

@@ -46,8 +46,8 @@ class ProductControllerIntegrationTest {
     void setUp() {
         testProduct = new ProductDTO(
             1L, 
-            "Duurzame Stoel",
-            "Ergonomische bureaustoel van gerecycled materiaal",
+            "Sustainable Chair",
+            "Ergonomic office chair made from recycled materials",
             new BigDecimal("299.99"),
             85,
             "ISO14001",
@@ -61,23 +61,23 @@ class ProductControllerIntegrationTest {
         when(productService.getAllProducts())
             .thenReturn(Arrays.asList(testProduct));
 
-        mockMvc.perform(get("/api/producten"))
+        mockMvc.perform(get("/api/products"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].naam").value("Duurzame Stoel"))
-                .andExpect(jsonPath("$[0].duurzaamheidsScore").value(85));
+                .andExpect(jsonPath("$[0].name").value("Sustainable Chair"))
+                .andExpect(jsonPath("$[0].sustainabilityScore").value(85));
     }
 
     @Test
-    @WithMockUser(roles = "VERKOPER")
+    @WithMockUser(roles = "SELLER")
     void whenCreateProduct_thenSuccess() throws Exception {
         when(productService.createProduct(any(ProductDTO.class)))
             .thenReturn(testProduct);
 
-        mockMvc.perform(post("/api/producten")
+        mockMvc.perform(post("/api/products")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testProduct)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.naam").value("Duurzame Stoel"));
+                .andExpect(jsonPath("$.name").value("Sustainable Chair"));
     }
 
     @Test
@@ -86,40 +86,40 @@ class ProductControllerIntegrationTest {
         when(productService.searchProductsByName(anyString()))
             .thenReturn(Arrays.asList(testProduct));
 
-        mockMvc.perform(get("/api/producten/zoek")
-                .param("naam", "stoel"))
+        mockMvc.perform(get("/api/products/search")
+                .param("name", "chair"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].naam").value("Duurzame Stoel"));
+                .andExpect(jsonPath("$[0].name").value("Sustainable Chair"));
     }
 
     @Test
     @WithMockUser
-    void whenGetDuurzameProducten_thenSuccess() throws Exception {
-        when(productService.getProductsByDuurzaamheidsScore(any()))
+    void whenGetSustainableProducts_thenSuccess() throws Exception {
+        when(productService.getProductsBySustainabilityScore(any()))
             .thenReturn(Arrays.asList(testProduct));
 
-        mockMvc.perform(get("/api/producten/duurzaam")
+        mockMvc.perform(get("/api/products/sustainable")
                 .param("minimumScore", "80"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].duurzaamheidsScore").value(85));
+                .andExpect(jsonPath("$[0].sustainabilityScore").value(85));
     }
 
     @Test
-    @WithMockUser(roles = "VERKOPER")
+    @WithMockUser(roles = "SELLER")
     void whenUpdateProduct_thenSuccess() throws Exception {
         when(productService.updateProduct(anyLong(), any(ProductDTO.class)))
             .thenReturn(testProduct);
 
-        mockMvc.perform(put("/api/producten/{id}", 1L)
+        mockMvc.perform(put("/api/products/{id}", 1L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testProduct)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.naam").value("Duurzame Stoel"));
+                .andExpect(jsonPath("$.name").value("Sustainable Chair"));
     }
 
     @Test
     void whenUnauthorizedAccess_thenForbidden() throws Exception {
-        mockMvc.perform(get("/api/producten"))
+        mockMvc.perform(get("/api/products"))
                 .andExpect(status().isForbidden());
     }
 }

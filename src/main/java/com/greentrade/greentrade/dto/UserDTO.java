@@ -9,9 +9,9 @@ import jakarta.validation.constraints.Size;
 public class UserDTO implements Serializable {
     private Long id;
 
-    @NotBlank(message = "Naam is verplicht")
-    @Size(min = 2, max = 50, message = "Naam moet tussen 2 en 50 tekens zijn")
-    private String naam;
+    @NotBlank(message = "Name is required")
+    @Size(min = 2, max = 50, message = "Name must be between 2 and 50 characters")
+    private String name;
 
     @NotBlank(message = "Email is verplicht")
     @Email(message = "Email moet een geldig email adres zijn")
@@ -23,9 +23,9 @@ public class UserDTO implements Serializable {
     // Constructors
     public UserDTO() {}
 
-    public UserDTO(Long id, String naam, String email, String role) {
+    public UserDTO(Long id, String name, String email, String role) {
         this.id = id;
-        this.naam = naam;
+        this.name = name;
         this.email = email;
         this.role = role;
     }
@@ -39,12 +39,12 @@ public class UserDTO implements Serializable {
         this.id = id;
     }
 
-    public String getNaam() {
-        return naam;
+    public String getName() {
+        return name;
     }
 
-    public void setNaam(String naam) {
-        this.naam = naam;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getEmail() {

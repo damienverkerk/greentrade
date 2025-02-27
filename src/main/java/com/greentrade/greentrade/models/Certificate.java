@@ -11,7 +11,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "certificaten")
+@Table(name = "certificates")
 public class Certificate {
 
     @Id
@@ -19,22 +19,22 @@ public class Certificate {
     private Long id;
 
     @Column(nullable = false)
-    private String naam;
+    private String name;
 
     @Column(nullable = false)
-    private String uitgever;
+    private String issuer;
 
-    @Column(name = "uitgiftedatum", nullable = false)
-    private LocalDate uitgifteDatum;
+    @Column(name = "issue_date", nullable = false)
+    private LocalDate issueDate;
 
-    @Column(name = "vervaldatum")
-    private LocalDate vervaldatum;
+    @Column(name = "expiry_date")
+    private LocalDate expiryDate;
 
     @Column(length = 1000)
-    private String beschrijving;
+    private String description;
 
-    @Column(name = "bestandspad")
-    private String bestandsPad;
+    @Column(name = "file_path")
+    private String filePath;
 
     @OneToOne(mappedBy = "certificate")
     private User user;
@@ -42,13 +42,13 @@ public class Certificate {
     // Constructors
     public Certificate() {}
 
-    public Certificate(String naam, String uitgever, LocalDate uitgifteDatum, LocalDate vervaldatum, String beschrijving, String bestandsPad, User user) {
-        this.naam = naam;
-        this.uitgever = uitgever;
-        this.uitgifteDatum = uitgifteDatum;
-        this.vervaldatum = vervaldatum;
-        this.beschrijving = beschrijving;
-        this.bestandsPad = bestandsPad;
+    public Certificate(String name, String issuer, LocalDate issueDate, LocalDate expiryDate, String description, String filePath, User user) {
+        this.name = name;
+        this.issuer = issuer;
+        this.issueDate = issueDate;
+        this.expiryDate = expiryDate;
+        this.description = description;
+        this.filePath = filePath;
         this.user = user;
     }
 
@@ -61,52 +61,52 @@ public class Certificate {
         this.id = id;
     }
 
-    public String getNaam() {
-        return naam;
+    public String getName() {
+        return name;
     }
 
-    public void setNaam(String naam) {
-        this.naam = naam;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public String getUitgever() {
-        return uitgever;
+    public String getIssuer() {
+        return issuer;
     }
 
-    public void setUitgever(String uitgever) {
-        this.uitgever = uitgever;
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
     }
 
-    public LocalDate getUitgifteDatum() {
-        return uitgifteDatum;
+    public LocalDate getIssueDate() {
+        return issueDate;
     }
 
-    public void setUitgifteDatum(LocalDate uitgifteDatum) {
-        this.uitgifteDatum = uitgifteDatum;
+    public void setIssueDate(LocalDate issueDate) {
+        this.issueDate = issueDate;
     }
 
-    public LocalDate getVervaldatum() {
-        return vervaldatum;
+    public LocalDate getExpiryDate() {
+        return expiryDate;
     }
 
-    public void setVervaldatum(LocalDate vervaldatum) {
-        this.vervaldatum = vervaldatum;
+    public void setExpiryDate(LocalDate expiryDate) {
+        this.expiryDate = expiryDate;
     }
 
-    public String getBeschrijving() {
-        return beschrijving;
+    public String getDescription() {
+        return description;
     }
 
-    public void setBeschrijving(String beschrijving) {
-        this.beschrijving = beschrijving;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public String getBestandsPad() {
-        return bestandsPad;
+    public String getFilePath() {
+        return filePath;
     }
 
-    public void setBestandsPad(String bestandsPad) {
-        this.bestandsPad = bestandsPad;
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
     public User getUser() {

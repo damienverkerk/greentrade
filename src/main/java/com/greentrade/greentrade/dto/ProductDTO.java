@@ -12,38 +12,38 @@ import jakarta.validation.constraints.Size;
 public class ProductDTO {
     private Long id;
 
-    @NotBlank(message = "Naam is verplicht")
-    @Size(min = 2, max = 100, message = "Naam moet tussen 2 en 100 tekens zijn")
-    private String naam;
+    @NotBlank(message = "Name is required")
+    @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
+    private String name;
 
-    @Size(max = 1000, message = "Beschrijving mag niet langer zijn dan 1000 tekens")
-    private String beschrijving;
+    @Size(max = 1000, message = "Description cannot be longer than 1000 characters")
+    private String description;
 
-    @NotNull(message = "Prijs is verplicht")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Prijs moet groter zijn dan 0")
-    private BigDecimal prijs;
+    @NotNull(message = "Price is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
+    private BigDecimal price;
 
-    @Min(value = 0, message = "Duurzaamheidsscore moet minimaal 0 zijn")
-    @Max(value = 100, message = "Duurzaamheidsscore mag maximaal 100 zijn")
-    private Integer duurzaamheidsScore;
+    @Min(value = 0, message = "Sustainability score must be at least 0")
+    @Max(value = 100, message = "Sustainability score cannot be more than 100")
+    private Integer sustainabilityScore;
 
-    private String duurzaamheidsCertificaat;
+    private String sustainabilityCertificate;
 
-    @NotNull(message = "Verkoper ID is verplicht")
-    private Long verkoperId;
+    @NotNull(message = "Seller ID is required")
+    private Long sellerId;
 
     // Constructors
     public ProductDTO() {}
 
-    public ProductDTO(Long id, String naam, String beschrijving, BigDecimal prijs, 
-                      Integer duurzaamheidsScore, String duurzaamheidsCertificaat, Long verkoperId) {
+    public ProductDTO(Long id, String name, String description, BigDecimal price, 
+                      Integer sustainabilityScore, String sustainabilityCertificate, Long sellerId) {
         this.id = id;
-        this.naam = naam;
-        this.beschrijving = beschrijving;
-        this.prijs = prijs;
-        this.duurzaamheidsScore = duurzaamheidsScore;
-        this.duurzaamheidsCertificaat = duurzaamheidsCertificaat;
-        this.verkoperId = verkoperId;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.sustainabilityScore = sustainabilityScore;
+        this.sustainabilityCertificate = sustainabilityCertificate;
+        this.sellerId = sellerId;
     }
 
     // Getters and setters
@@ -55,51 +55,51 @@ public class ProductDTO {
         this.id = id;
     }
 
-    public String getNaam() {
-        return naam;
+    public String getName() {
+        return name;
     }
 
-    public void setNaam(String naam) {
-        this.naam = naam;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public String getBeschrijving() {
-        return beschrijving;
+    public String getDescription() {
+        return description;
     }
 
-    public void setBeschrijving(String beschrijving) {
-        this.beschrijving = beschrijving;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public BigDecimal getPrijs() {
-        return prijs;
+    public BigDecimal getPrice() {
+        return price;
     }
 
-    public void setPrijs(BigDecimal prijs) {
-        this.prijs = prijs;
+    public void setPrice(BigDecimal price) {
+        this.price = price;
     }
 
-    public Integer getDuurzaamheidsScore() {
-        return duurzaamheidsScore;
+    public Integer getSustainabilityScore() {
+        return sustainabilityScore;
     }
 
-    public void setDuurzaamheidsScore(Integer duurzaamheidsScore) {
-        this.duurzaamheidsScore = duurzaamheidsScore;
+    public void setSustainabilityScore(Integer sustainabilityScore) {
+        this.sustainabilityScore = sustainabilityScore;
     }
 
-    public String getDuurzaamheidsCertificaat() {
-        return duurzaamheidsCertificaat;
+    public String getSustainabilityCertificate() {
+        return sustainabilityCertificate;
     }
 
-    public void setDuurzaamheidsCertificaat(String duurzaamheidsCertificaat) {
-        this.duurzaamheidsCertificaat = duurzaamheidsCertificaat;
+    public void setSustainabilityCertificate(String sustainabilityCertificate) {
+        this.sustainabilityCertificate = sustainabilityCertificate;
     }
 
-    public Long getVerkoperId() {
-        return verkoperId;
+    public Long getSellerId() {
+        return sellerId;
     }
 
-    public void setVerkoperId(Long verkoperId) {
-        this.verkoperId = verkoperId;
+    public void setSellerId(Long sellerId) {
+        this.sellerId = sellerId;
     }
 }

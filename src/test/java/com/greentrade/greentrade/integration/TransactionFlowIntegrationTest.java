@@ -1,5 +1,3 @@
-// src/test/java/com/greentrade/greentrade/integration/TransactionFlowIntegrationTest.java
-
 package com.greentrade.greentrade.integration;
 
 import java.math.BigDecimal;
@@ -64,7 +62,7 @@ class TransactionFlowIntegrationTest {
 
    @Test
    @DisplayName("Complete transaction flow - happy path")
-   @WithMockUser(roles = "KOPER")
+   @WithMockUser(roles = "BUYER")
    void completeTransactionFlow() throws Exception {
        // Arrange: Product aanmaken
        MvcResult createProductResult = mockMvc.perform(post("/api/producten")
@@ -109,9 +107,9 @@ class TransactionFlowIntegrationTest {
 
    @Test
    @DisplayName("Transactie met ongeldig bedrag geeft 400")
-   @WithMockUser(roles = "KOPER")
+   @WithMockUser(roles = "BUYER")
    void createTransactionWithInvalidAmount_ReturnsBadRequest() throws Exception {
-       testTransaction.setBedrag(new BigDecimal("-100.00"));
+       testTransaction.setAmount(new BigDecimal("-100.00"));
 
        mockMvc.perform(post("/api/transacties")
                .contentType(MediaType.APPLICATION_JSON)
@@ -129,7 +127,7 @@ class TransactionFlowIntegrationTest {
 
    @Test
    @DisplayName("Transactie ophalen met verkeerde rol geeft 403")
-   @WithMockUser(roles = "VERKOPER")
+   @WithMockUser(roles = "SELLER")
    void getTransactionAsWrongRole_ReturnsForbidden() throws Exception {
        mockMvc.perform(get("/api/transacties/koper/1"))
                .andExpect(status().isForbidden());

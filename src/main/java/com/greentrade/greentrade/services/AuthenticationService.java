@@ -35,15 +35,15 @@ public class AuthenticationService {
         }
 
         // Valideer wachtwoord sterkte
-        validatePassword(request.getWachtwoord());
+        validatePassword(request.getPassword());
 
         // Maak nieuwe gebruiker aan
         var user = User.builder()
-                .naam(request.getNaam())
+                .name(request.getName())
                 .email(request.getEmail())
-                .wachtwoord(passwordEncoder.encode(request.getWachtwoord()))
+                .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.valueOf(request.getRole()))
-                .verificatieStatus(true)  // Standaard op true voor nu
+                .verificationStatus(true)  // Standaard op true voor nu
                 .build();
         
         var savedUser = userRepository.save(user);

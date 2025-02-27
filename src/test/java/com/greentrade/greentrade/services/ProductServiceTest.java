@@ -44,31 +44,31 @@ class ProductServiceTest {
     @InjectMocks
     private ProductService productService;
 
-    private User testVerkoper;
+    private User testSeller;
     private Product testProduct;
     private ProductDTO testProductDTO;
 
     @BeforeEach
     @SuppressWarnings("unused")
     void setUp() {
-        testVerkoper = User.builder()
+        testSeller = User.builder()
                 .id(1L)
-                .naam("Test Verkoper")
-                .email("verkoper@test.com")
+                .name("Test Seller")
+                .email("seller@test.com")
                 .build();
 
         testProduct = new Product();
         testProduct.setId(1L);
-        testProduct.setNaam("Test Product");
-        testProduct.setBeschrijving("Test Beschrijving");
-        testProduct.setPrijs(new BigDecimal("99.99"));
-        testProduct.setDuurzaamheidsScore(85);
-        testProduct.setVerkoper(testVerkoper);
+        testProduct.setName("Test Product");
+        testProduct.setDescription("Test Description");
+        testProduct.setPrice(new BigDecimal("99.99"));
+        testProduct.setSustainabilityScore(85);
+        testProduct.setSeller(testSeller);
 
         testProductDTO = new ProductDTO(
             1L,
             "Test Product",
-            "Test Beschrijving",
+            "Test Description",
             new BigDecimal("99.99"),
             85,
             null,
@@ -84,8 +84,8 @@ class ProductServiceTest {
 
         assertNotNull(result);
         assertEquals(testProduct.getId(), result.getId());
-        assertEquals(testProduct.getNaam(), result.getNaam());
-        assertEquals(testProduct.getPrijs(), result.getPrijs());
+        assertEquals(testProduct.getName(), result.getName());
+        assertEquals(testProduct.getPrice(), result.getPrice());
     }
 
     @Test
@@ -96,31 +96,31 @@ class ProductServiceTest {
             ProductNotFoundException.class,
             () -> productService.getProductById(999L)
         );
-        assertEquals("Product niet gevonden met ID: 999", thrown.getMessage());
+        assertEquals("Product not found with ID: 999", thrown.getMessage());
     }
     
     @Test
     void createProduct_ValidData_CreatesProduct() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testVerkoper));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testSeller));
         when(productRepository.save(any(Product.class))).thenReturn(testProduct);
 
         ProductDTO result = productService.createProduct(testProductDTO);
 
         assertNotNull(result);
-        assertEquals(testProductDTO.getNaam(), result.getNaam());
-        assertEquals(testProductDTO.getPrijs(), result.getPrijs());
-        assertEquals(testProductDTO.getVerkoperId(), result.getVerkoperId());
+        assertEquals(testProductDTO.getName(), result.getName());
+        assertEquals(testProductDTO.getPrice(), result.getPrice());
+        assertEquals(testProductDTO.getSellerId(), result.getSellerId());
     }
 
     @Test
     void createProduct_InvalidPrice_ThrowsException() {
-        testProductDTO.setPrijs(new BigDecimal("-10.00"));
+        testProductDTO.setPrice(new BigDecimal("-10.00"));
 
         InvalidProductDataException thrown = assertThrows(
             InvalidProductDataException.class,
             () -> productService.createProduct(testProductDTO)
         );
-        assertTrue(thrown.getMessage().contains("prijs"));
+        assertTrue(thrown.getMessage().contains("price"));
         verify(productRepository, never()).save(any(Product.class));
     }
 
@@ -128,9 +128,9 @@ class ProductServiceTest {
     void getAllProducts_ReturnsAllProducts() {
         Product product2 = new Product();
         product2.setId(2L);
-        product2.setNaam("Test Product 2");
-        product2.setPrijs(new BigDecimal("199.99"));
-        product2.setVerkoper(testVerkoper);
+        product2.setName("Test Product 2");
+        product2.setPrice(new BigDecimal("199.99"));
+        product2.setSeller(testSeller);
 
         when(productRepository.findAll()).thenReturn(Arrays.asList(testProduct, product2));
 
@@ -138,8 +138,8 @@ class ProductServiceTest {
 
         assertNotNull(results);
         assertEquals(2, results.size());
-        assertEquals(testProduct.getNaam(), results.get(0).getNaam());
-        assertEquals(product2.getNaam(), results.get(1).getNaam());
+        assertEquals(testProduct.getName(), results.get(0).getName());
+        assertEquals(product2.getName(), results.get(1).getName());
     }
 
     @Test
@@ -159,7 +159,7 @@ class ProductServiceTest {
             ProductNotFoundException.class,
             () -> productService.deleteProduct(999L)
         );
-        assertEquals("Product niet gevonden met ID: 999", thrown.getMessage());
+        assertEquals("Product not found with ID: 999", thrown.getMessage());
         verify(productRepository, never()).deleteById(anyLong());
     }
 
@@ -167,15 +167,15 @@ class ProductServiceTest {
     void updateProduct_ValidData_UpdatesProduct() {
         when(productRepository.existsById(1L)).thenReturn(true);
         when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testVerkoper));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testSeller));
         when(productRepository.save(any(Product.class))).thenReturn(testProduct);
 
-        testProductDTO.setNaam("Updated Name");
+        testProductDTO.setName("Updated Name");
         ProductDTO result = productService.updateProduct(1L, testProductDTO);
 
         assertNotNull(result);
-        assertEquals("Updated Name", result.getNaam());
-        assertEquals(testProductDTO.getPrijs(), result.getPrijs());
+        assertEquals("Updated Name", result.getName());
+        assertEquals(testProductDTO.getPrice(), result.getPrice());
     }
 
     @Test
@@ -186,20 +186,20 @@ class ProductServiceTest {
             ProductNotFoundException.class,
             () -> productService.updateProduct(999L, testProductDTO)
         );
-        assertEquals("Product niet gevonden met ID: 999", thrown.getMessage());
+        assertEquals("Product not found with ID: 999", thrown.getMessage());
         verify(productRepository, never()).save(any(Product.class));
     }
 
     @Test
     void searchProductsByName_ValidName_ReturnsProducts() {
-        when(productRepository.findByNaamContainingIgnoreCase("Test"))
+        when(productRepository.findByNameContainingIgnoreCase("Test"))
             .thenReturn(Arrays.asList(testProduct));
 
         List<ProductDTO> results = productService.searchProductsByName("Test");
 
         assertNotNull(results);
         assertEquals(1, results.size());
-        assertEquals(testProduct.getNaam(), results.get(0).getNaam());
+        assertEquals(testProduct.getName(), results.get(0).getName());
     }
 
     @Test
@@ -208,7 +208,7 @@ class ProductServiceTest {
             InvalidProductDataException.class,
             () -> productService.searchProductsByName("")
         );
-        assertTrue(thrown.getMessage().contains("naam"));
-        verify(productRepository, never()).findByNaamContainingIgnoreCase(anyString());
+        assertTrue(thrown.getMessage().contains("name"));
+        verify(productRepository, never()).findByNameContainingIgnoreCase(anyString());
     }
 }

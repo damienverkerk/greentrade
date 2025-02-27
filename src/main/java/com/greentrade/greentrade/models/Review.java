@@ -12,7 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "beoordelingen")
+@Table(name = "reviews")
 public class Review {
 
     @Id
@@ -24,27 +24,27 @@ public class Review {
     private Product product;
 
     @ManyToOne
-    @JoinColumn(name = "recensent_id", nullable = false)
-    private User recensent;
+    @JoinColumn(name = "reviewer_id", nullable = false)
+    private User reviewer;
 
     @Column(nullable = false)
     private int score;
 
     @Column(length = 1000)
-    private String commentaar;
+    private String comment;
 
     @Column(nullable = false)
-    private LocalDateTime datum;
+    private LocalDateTime date;
 
     // Constructors
     public Review() {}
 
-    public Review(Product product, User recensent, int score, String commentaar, LocalDateTime datum) {
+    public Review(Product product, User reviewer, int score, String comment, LocalDateTime date) {
         this.product = product;
-        this.recensent = recensent;
+        this.reviewer = reviewer;
         this.score = score;
-        this.commentaar = commentaar;
-        this.datum = datum;
+        this.comment = comment;
+        this.date = date;
     }
 
     // Getters and Setters
@@ -64,12 +64,12 @@ public class Review {
         this.product = product;
     }
 
-    public User getRecensent() {
-        return recensent;
+    public User getReviewer() {
+        return reviewer;
     }
 
-    public void setRecensent(User recensent) {
-        this.recensent = recensent;
+    public void setReviewer(User reviewer) {
+        this.reviewer = reviewer;
     }
 
     public int getScore() {
@@ -80,19 +80,19 @@ public class Review {
         this.score = score;
     }
 
-    public String getCommentaar() {
-        return commentaar;
+    public String getComment() {
+        return comment;
     }
 
-    public void setCommentaar(String commentaar) {
-        this.commentaar = commentaar;
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 
-    public LocalDateTime getDatum() {
-        return datum;
+    public LocalDateTime getDate() {
+        return date;
     }
 
-    public void setDatum(LocalDateTime datum) {
-        this.datum = datum;
+    public void setDate(LocalDateTime date) {
+        this.date = date;
     }
 }

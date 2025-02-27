@@ -57,7 +57,7 @@ class ProductVerificationControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "VERKOPER")
+    @WithMockUser(roles = "SELLER")
     void whenSubmitVerification_thenSuccess() throws Exception {
         when(verificationService.submitForVerification(anyLong()))
             .thenReturn(testVerificationDTO);
@@ -70,7 +70,7 @@ class ProductVerificationControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "VERKOPER")
+    @WithMockUser(roles = "SELLER")
     void whenSubmitVerificationWithExistingVerification_thenBadRequest() throws Exception {
         when(verificationService.submitForVerification(anyLong()))
             .thenThrow(new DuplicateVerificationException(1L));
@@ -78,7 +78,7 @@ class ProductVerificationControllerIntegrationTest {
         mockMvc.perform(post("/api/verifications/products/1/submit")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Er is al een lopende verificatie voor product met ID: 1"));
+                .andExpect(jsonPath("$.message").value("There is already an ongoing verification for product with ID: 1"));
     }
 
     @Test
@@ -102,14 +102,14 @@ class ProductVerificationControllerIntegrationTest {
     void whenReviewVerificationWithoutScore_thenBadRequest() throws Exception {
         testReviewDTO.setSustainabilityScore(null);
         when(verificationService.reviewProduct(anyLong(), any(), anyLong()))
-            .thenThrow(new InvalidVerificationStatusException("Duurzaamheidsscore is verplicht bij goedkeuring"));
+            .thenThrow(new InvalidVerificationStatusException("Sustainability score is required for approval"));
 
         mockMvc.perform(post("/api/verifications/1/review")
                 .param("reviewerId", "1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testReviewDTO)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Duurzaamheidsscore is verplicht bij goedkeuring"));
+                .andExpect(jsonPath("$.message").value("Sustainability score is required for approval"));
     }
 
     @Test
@@ -117,7 +117,7 @@ class ProductVerificationControllerIntegrationTest {
     void whenReviewVerificationWithRejection_thenSuccess() throws Exception {
         testReviewDTO.setStatus(VerificationStatus.REJECTED);
         testReviewDTO.setSustainabilityScore(null);
-        testReviewDTO.setRejectionReason("Product voldoet niet aan eisen");
+        testReviewDTO.setRejectionReason("Product does not meet requirements");
 
         when(verificationService.reviewProduct(anyLong(), any(), anyLong()))
             .thenReturn(testReviewDTO);
@@ -151,14 +151,14 @@ class ProductVerificationControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "KOPER")
+    @WithMockUser(roles = "BUYER")
     void whenInvalidRole_thenForbidden() throws Exception {
         mockMvc.perform(get("/api/verifications/pending"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(roles = "VERKOPER")
+    @WithMockUser(roles = "SELLER")
     void whenGetVerificationsByProduct_thenSuccess() throws Exception {
         when(verificationService.getVerificationsByProduct(anyLong()))
             .thenReturn(Arrays.asList(testVerificationDTO));

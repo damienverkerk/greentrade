@@ -54,7 +54,7 @@ class ProductVerificationFlowIntegrationTest {
 
    @Test
    @DisplayName("Complete verification flow - happy path")
-   @WithMockUser(username = "verkoper@test.nl", roles = {"VERKOPER", "ADMIN"})
+   @WithMockUser(username = "verkoper@test.nl", roles = {"ROLE_SELLER", "ROLE_ADMIN"})
    void completeVerificationFlow() throws Exception {
        // Arrange: Product aanmaken
        MvcResult createResult = mockMvc.perform(post("/api/producten")

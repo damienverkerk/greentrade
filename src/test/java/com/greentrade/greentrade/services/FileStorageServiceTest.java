@@ -33,8 +33,8 @@ class FileStorageServiceTest {
    private FileValidationConfig fileValidationConfig;
    
    @BeforeEach
-   @SuppressWarnings("unused")
    void setUp() {
+       // Arrange
        fileStorageConfig = new FileStorageConfig();
        fileStorageConfig.setUploadDir(tempDir.toString());
        

@@ -46,46 +46,49 @@ class DataSqlTest {
 
     @Test
     void testDataSqlLoading() {
+        // Arrange - Nothing to arrange here since we're testing data initialization
+
+        // Act & Assert - Verify seed data loaded correctly
         try {
             // Test Certificates
             var certificates = certificateRepository.findAll();
-            logger.info("Aantal gevonden certificaten: {}", certificates.size());
-            assertEquals(2, certificates.size(), "Er moeten 2 certificaten zijn");
+            logger.info("Number of certificates found: {}", certificates.size());
+            assertEquals(2, certificates.size(), "There should be 2 certificates");
 
             // Test Users
             var users = userRepository.findAll();
-            logger.info("Aantal gevonden users: {}", users.size());
-            assertEquals(3, users.size(), "Er moeten 3 users zijn");
+            logger.info("Number of users found: {}", users.size());
+            assertEquals(3, users.size(), "There should be 3 users");
             assertTrue(userRepository.findByEmail("admin@greentrade.nl").isPresent(), 
-                "Admin user moet bestaan");
+                "Admin user should exist");
 
             // Test Products
             var products = productRepository.findAll();
-            logger.info("Aantal gevonden producten: {}", products.size());
-            assertEquals(3, products.size(), "Er moeten 3 producten zijn");
+            logger.info("Number of products found: {}", products.size());
+            assertEquals(3, products.size(), "There should be 3 products");
             
             // Test Reviews
             var reviews = reviewRepository.findAll();
-            logger.info("Aantal gevonden reviews: {}", reviews.size());
-            assertEquals(2, reviews.size(), "Er moeten 2 reviews zijn");
+            logger.info("Number of reviews found: {}", reviews.size());
+            assertEquals(2, reviews.size(), "There should be 2 reviews");
 
             // Test Messages
             var messages = messageRepository.findAll();
-            logger.info("Aantal gevonden berichten: {}", messages.size());
-            assertEquals(2, messages.size(), "Er moeten 2 berichten zijn");
+            logger.info("Number of messages found: {}", messages.size());
+            assertEquals(2, messages.size(), "There should be 2 messages");
 
             // Test Transactions
             var transactions = transactionRepository.findAll();
-            logger.info("Aantal gevonden transacties: {}", transactions.size());
-            assertEquals(2, transactions.size(), "Er moeten 2 transacties zijn");
+            logger.info("Number of transactions found: {}", transactions.size());
+            assertEquals(2, transactions.size(), "There should be 2 transactions");
 
             // Test Verifications
             var verifications = verificationRepository.findAll();
-            logger.info("Aantal gevonden verificaties: {}", verifications.size());
-            assertEquals(2, verifications.size(), "Er moeten 2 verificaties zijn");
+            logger.info("Number of verifications found: {}", verifications.size());
+            assertEquals(2, verifications.size(), "There should be 2 verifications");
             
         } catch (Exception e) {
-            logger.error("Fout tijdens het testen van data.sql loading", e);
+            logger.error("Error during data.sql loading test", e);
             throw e;
         }
     }

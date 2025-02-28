@@ -15,6 +15,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -23,11 +25,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.greentrade.greentrade.dto.TransactionDTO;
+import com.greentrade.greentrade.dto.transaction.TransactionCreateRequest;
+import com.greentrade.greentrade.dto.transaction.TransactionResponse;
 import com.greentrade.greentrade.services.TransactionService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
+@TestPropertySource(properties = {
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.sql.init.mode=never"
+})
 class TransactionControllerIntegrationTest {
 
     @Autowired
@@ -39,27 +47,37 @@ class TransactionControllerIntegrationTest {
     @MockBean
     private TransactionService transactionService;
 
-    private TransactionDTO testTransaction;
+    private TransactionResponse testTransaction;
+    private TransactionCreateRequest createRequest;
 
     @BeforeEach
-    @SuppressWarnings("unused")
     void setUp() {
-        testTransaction = new TransactionDTO(
-            1L,
-            1L, // buyerId
-            1L, // productId
-            new BigDecimal("299.99"),
-            LocalDateTime.now(),
-            "PROCESSING"
-        );
+        
+        testTransaction = TransactionResponse.builder()
+            .id(1L)
+            .buyerId(1L)
+            .productId(1L)
+            .amount(new BigDecimal("299.99"))
+            .date(LocalDateTime.now())
+            .status("PROCESSING")
+            .build();
+            
+       
+        createRequest = TransactionCreateRequest.builder()
+            .buyerId(1L)
+            .productId(1L)
+            .amount(new BigDecimal("299.99"))
+            .build();
     }
 
     @Test
     @WithMockUser
     void whenGetAllTransactions_thenSuccess() throws Exception {
+        
         when(transactionService.getAllTransactions())
             .thenReturn(Arrays.asList(testTransaction));
 
+       
         mockMvc.perform(get("/api/transactions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].status").value("PROCESSING"))
@@ -69,12 +87,14 @@ class TransactionControllerIntegrationTest {
     @Test
     @WithMockUser(roles = "BUYER")
     void whenCreateTransaction_thenSuccess() throws Exception {
-        when(transactionService.createTransaction(any(TransactionDTO.class)))
+        
+        when(transactionService.createTransaction(any(TransactionCreateRequest.class)))
             .thenReturn(testTransaction);
 
+        
         mockMvc.perform(post("/api/transactions")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(testTransaction)))
+                .content(objectMapper.writeValueAsString(createRequest)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("PROCESSING"));
     }
@@ -82,14 +102,20 @@ class TransactionControllerIntegrationTest {
     @Test
     @WithMockUser
     void whenUpdateTransactionStatus_thenSuccess() throws Exception {
-        TransactionDTO updatedTransaction = new TransactionDTO(
-            1L, 1L, 1L, new BigDecimal("299.99"),
-            LocalDateTime.now(), "COMPLETED"
-        );
+        
+        TransactionResponse updatedTransaction = TransactionResponse.builder()
+            .id(1L)
+            .buyerId(1L)
+            .productId(1L)
+            .amount(new BigDecimal("299.99"))
+            .date(LocalDateTime.now())
+            .status("COMPLETED")
+            .build();
 
         when(transactionService.updateTransactionStatus(anyLong(), any()))
             .thenReturn(updatedTransaction);
 
+        
         mockMvc.perform(put("/api/transactions/{id}/status", 1L)
                 .param("newStatus", "COMPLETED"))
                 .andExpect(status().isOk())
@@ -99,9 +125,11 @@ class TransactionControllerIntegrationTest {
     @Test
     @WithMockUser(roles = "BUYER") 
     void whenGetTransactionsByBuyer_thenSuccess() throws Exception {
+        
         when(transactionService.getTransactionsByBuyer(anyLong()))
             .thenReturn(Arrays.asList(testTransaction));
     
+        
         mockMvc.perform(get("/api/transactions/buyer/{buyerId}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].buyerId").value(1));
@@ -110,9 +138,11 @@ class TransactionControllerIntegrationTest {
     @Test
     @WithMockUser
     void whenGetTransactionsBySeller_thenSuccess() throws Exception {
+        
         when(transactionService.getTransactionsBySeller(anyLong()))
             .thenReturn(Arrays.asList(testTransaction));
 
+        
         mockMvc.perform(get("/api/transactions/seller/{sellerId}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].buyerId").value(1));
@@ -121,9 +151,11 @@ class TransactionControllerIntegrationTest {
     @Test
     @WithMockUser
     void whenGetTransactionsBetweenDates_thenSuccess() throws Exception {
+        
         when(transactionService.getTransactionsBetweenDates(any(), any()))
             .thenReturn(Arrays.asList(testTransaction));
 
+        
         mockMvc.perform(get("/api/transactions/period")
                 .param("start", LocalDateTime.now().minusDays(7).toString())
                 .param("end", LocalDateTime.now().toString()))

@@ -11,6 +11,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -20,11 +22,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.greentrade.greentrade.dto.ProductDTO;
-import com.greentrade.greentrade.dto.TransactionDTO;
+import com.greentrade.greentrade.dto.product.ProductCreateRequest;
+import com.greentrade.greentrade.dto.product.ProductResponse;
+import com.greentrade.greentrade.dto.transaction.TransactionCreateRequest;
+import com.greentrade.greentrade.dto.transaction.TransactionResponse;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
+@TestPropertySource(properties = {
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.sql.init.mode=never"
+})
 @DisplayName("Transaction Flow Integration Tests")
 class TransactionFlowIntegrationTest {
 
@@ -34,102 +43,120 @@ class TransactionFlowIntegrationTest {
    @Autowired
    private ObjectMapper objectMapper;
 
-   private ProductDTO testProduct;
-   private TransactionDTO testTransaction;
+   private ProductCreateRequest productRequest;
+   private TransactionCreateRequest transactionRequest;
 
    @BeforeEach
-   @SuppressWarnings("unused")
    void setUp() {
-       testProduct = new ProductDTO(
-           null,
-           "Duurzame Stoel",
-           "Test product",
-           new BigDecimal("299.99"),
-           85,
-           "ISO14001",
-           2L
-       );
+       
+       productRequest = ProductCreateRequest.builder()
+           .name("Duurzame Stoel")
+           .description("Test product")
+           .price(new BigDecimal("299.99"))
+           .sustainabilityScore(85)
+           .sustainabilityCertificate("ISO14001")
+           .sellerId(2L)
+           .build();
 
-       testTransaction = new TransactionDTO(
-           null,
-           3L, // koper_id
-           null, // product_id wordt later ingevuld
-           new BigDecimal("299.99"),
-           LocalDateTime.now(),
-           "IN_BEHANDELING"
-       );
+      
+       transactionRequest = TransactionCreateRequest.builder()
+           .buyerId(3L)
+           .amount(new BigDecimal("299.99"))
+           .build();
    }
 
    @Test
    @DisplayName("Complete transaction flow - happy path")
-   @WithMockUser(roles = "BUYER")
+   @WithMockUser(roles = {"SELLER", "BUYER"})
    void completeTransactionFlow() throws Exception {
-       // Arrange: Product aanmaken
-       MvcResult createProductResult = mockMvc.perform(post("/api/producten")
+       
+       MvcResult createProductResult = mockMvc.perform(post("/api/products")
                .contentType(MediaType.APPLICATION_JSON)
-               .content(objectMapper.writeValueAsString(testProduct))
+               .content(objectMapper.writeValueAsString(productRequest))
                .with(request -> {
-                   request.setUserPrincipal(() -> "verkoper@greentrade.nl");
+                   request.setUserPrincipal(() -> "seller@greentrade.nl");
                    return request;
                }))
                .andExpect(status().isCreated())
                .andReturn();
 
-       ProductDTO createdProduct = objectMapper.readValue(
+       ProductResponse createdProduct = objectMapper.readValue(
            createProductResult.getResponse().getContentAsString(),
-           ProductDTO.class
+           ProductResponse.class
        );
-       testTransaction.setProductId(createdProduct.getId());
+       
+       
+       transactionRequest.setProductId(createdProduct.getId());
 
-       // Act & Assert: Transactie aanmaken
-       MvcResult createTransactionResult = mockMvc.perform(post("/api/transacties")
+      
+       MvcResult createTransactionResult = mockMvc.perform(post("/api/transactions")
                .contentType(MediaType.APPLICATION_JSON)
-               .content(objectMapper.writeValueAsString(testTransaction)))
+               .content(objectMapper.writeValueAsString(transactionRequest)))
                .andExpect(status().isCreated())
                .andReturn();
 
-       TransactionDTO createdTransaction = objectMapper.readValue(
+       TransactionResponse createdTransaction = objectMapper.readValue(
            createTransactionResult.getResponse().getContentAsString(),
-           TransactionDTO.class
+           TransactionResponse.class
        );
 
-       // Act & Assert: Status updaten
-       mockMvc.perform(put("/api/transacties/{id}/status", createdTransaction.getId())
-               .param("nieuweStatus", "VOLTOOID"))
+       
+       mockMvc.perform(put("/api/transactions/{id}/status", createdTransaction.getId())
+               .param("newStatus", "COMPLETED"))
                .andExpect(status().isOk())
-               .andExpect(jsonPath("$.status").value("VOLTOOID"));
+               .andExpect(jsonPath("$.status").value("COMPLETED"));
 
-       // Assert: Transactie ophalen
-       mockMvc.perform(get("/api/transacties/koper/{koperId}", 3L))
+       
+       mockMvc.perform(get("/api/transactions/buyer/{buyerId}", 3L))
                .andExpect(status().isOk())
-               .andExpect(jsonPath("$[0].status").value("VOLTOOID"));
+               .andExpect(jsonPath("$[0].status").value("COMPLETED"));
    }
 
    @Test
-   @DisplayName("Transactie met ongeldig bedrag geeft 400")
+   @DisplayName("Transaction with invalid amount gives 400")
    @WithMockUser(roles = "BUYER")
    void createTransactionWithInvalidAmount_ReturnsBadRequest() throws Exception {
-       testTransaction.setAmount(new BigDecimal("-100.00"));
+      
+       transactionRequest.setAmount(new BigDecimal("-100.00"));
+       transactionRequest.setProductId(1L); // Existing product ID
 
-       mockMvc.perform(post("/api/transacties")
+       
+       mockMvc.perform(post("/api/transactions")
                .contentType(MediaType.APPLICATION_JSON)
-               .content(objectMapper.writeValueAsString(testTransaction)))
+               .content(objectMapper.writeValueAsString(transactionRequest)))
                .andExpect(status().isBadRequest());
    }
 
    @Test
-   @DisplayName("Transactiestatus updaten zonder auth geeft 403") 
+   @DisplayName("Update transaction status without auth gives 403") 
    void updateStatusWithoutAuth_ReturnsForbidden() throws Exception {
-       mockMvc.perform(put("/api/transacties/1/status")
-               .param("nieuweStatus", "VOLTOOID"))
+       
+       mockMvc.perform(put("/api/transactions/1/status")
+               .param("newStatus", "COMPLETED"))
                .andExpect(status().isForbidden());
    }
 
    @Test
-   @DisplayName("Transactie ophalen met verkeerde rol geeft 403")
+   @DisplayName("Get transactions with wrong role gives 403")
    @WithMockUser(roles = "SELLER")
    void getTransactionAsWrongRole_ReturnsForbidden() throws Exception {
-       mockMvc.perform(get("/api/transacties/koper/1"))
+       
+       mockMvc.perform(get("/api/transactions/buyer/1"))
                .andExpect(status().isForbidden());
+   }
+   
+   @Test
+   @DisplayName("Get transactions between dates")
+   @WithMockUser
+   void getTransactionsBetweenDates_ReturnsTransactions() throws Exception {
+      
+       LocalDateTime start = LocalDateTime.now().minusDays(30);
+       LocalDateTime end = LocalDateTime.now();
+       
+       
+       mockMvc.perform(get("/api/transactions/period")
+               .param("start", start.toString())
+               .param("end", end.toString()))
+               .andExpect(status().isOk());
    }
 }

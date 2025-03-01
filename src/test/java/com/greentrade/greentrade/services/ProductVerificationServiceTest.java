@@ -66,26 +66,26 @@ class ProductVerificationServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Arrange - Create test user
+        
         testUser = User.builder()
             .id(1L)
             .name("Test Reviewer")
             .build();
 
-        // Arrange - Create test product
+        
         testProduct = new Product();
         testProduct.setId(1L);
         testProduct.setName("Test Product");
         testProduct.setSeller(testUser);
 
-        // Arrange - Create test verification
+        
         testVerification = new ProductVerification();
         testVerification.setId(1L);
         testVerification.setProduct(testProduct);
         testVerification.setStatus(VerificationStatus.PENDING);
         testVerification.setSubmissionDate(LocalDateTime.now());
         
-        // Arrange - Create test verification response
+       
         testVerificationResponse = VerificationResponse.builder()
             .id(1L)
             .productId(1L)
@@ -93,7 +93,7 @@ class ProductVerificationServiceTest {
             .submissionDate(LocalDateTime.now())
             .build();
             
-        // Arrange - Create request objects
+        
         createRequest = VerificationCreateRequest.builder()
             .productId(1L)
             .build();
@@ -107,7 +107,7 @@ class ProductVerificationServiceTest {
 
     @Test
     void submitForVerification_WithValidProduct_CreatesVerification() {
-        // Arrange
+        
         when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
         when(verificationRepository.findFirstByProductOrderBySubmissionDateDesc(testProduct))
             .thenReturn(Optional.empty());
@@ -116,10 +116,10 @@ class ProductVerificationServiceTest {
         when(verificationRepository.save(any(ProductVerification.class))).thenReturn(testVerification);
         when(verificationMapper.toResponse(testVerification)).thenReturn(testVerificationResponse);
 
-        // Act
+        
         VerificationResponse result = verificationService.submitForVerification(1L);
 
-        // Assert
+        
         assertNotNull(result);
         assertEquals(VerificationStatus.PENDING, result.getStatus());
         assertEquals(testProduct.getId(), result.getProductId());
@@ -130,10 +130,10 @@ class ProductVerificationServiceTest {
 
     @Test
     void submitForVerification_WithNonExistingProduct_ThrowsException() {
-        // Arrange
+        
         when(productRepository.findById(999L)).thenReturn(Optional.empty());
     
-        // Act & Assert
+        
         ProductNotFoundException thrown = assertThrows(
             ProductNotFoundException.class,  
             () -> verificationService.submitForVerification(999L)
@@ -144,12 +144,12 @@ class ProductVerificationServiceTest {
 
     @Test
     void submitForVerification_WithExistingPendingVerification_ThrowsException() {
-        // Arrange
+        
         when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
         when(verificationRepository.findFirstByProductOrderBySubmissionDateDesc(testProduct))
             .thenReturn(Optional.of(testVerification));
 
-        // Act & Assert
+        
         DuplicateVerificationException thrown = assertThrows(
             DuplicateVerificationException.class, 
             () -> verificationService.submitForVerification(1L)
@@ -160,7 +160,7 @@ class ProductVerificationServiceTest {
 
     @Test
     void reviewProduct_WithValidData_UpdatesVerification() {
-        // Arrange
+        
         when(verificationRepository.findById(1L)).thenReturn(Optional.of(testVerification));
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         
@@ -176,10 +176,10 @@ class ProductVerificationServiceTest {
         when(verificationRepository.save(any(ProductVerification.class))).thenReturn(testVerification);
         when(verificationMapper.toResponse(testVerification)).thenReturn(approvedResponse);
 
-        // Act
+        
         VerificationResponse result = verificationService.reviewProduct(1L, reviewRequest, 1L);
 
-        // Assert
+        
         assertNotNull(result);
         assertEquals(VerificationStatus.APPROVED, result.getStatus());
         assertEquals(85, result.getSustainabilityScore());
@@ -188,42 +188,42 @@ class ProductVerificationServiceTest {
 
     @Test
     void reviewProduct_WithClosedVerification_ThrowsException() {
-        // Arrange
+        
         testVerification.setStatus(VerificationStatus.APPROVED);
         when(verificationRepository.findById(1L)).thenReturn(Optional.of(testVerification));
 
-        // Act & Assert
+       
         InvalidVerificationStatusException thrown = assertThrows(
             InvalidVerificationStatusException.class,
             () -> verificationService.reviewProduct(1L, reviewRequest, 1L)
         );
-        assertEquals("Deze verificatie kan niet meer worden beoordeeld", thrown.getMessage());
+        assertEquals("This verification cannot be reviewed anymore", thrown.getMessage());
         verify(verificationRepository, never()).save(any(ProductVerification.class));
     }
 
     @Test
     void reviewProduct_WithoutScore_ThrowsException() {
-        // Arrange
+        
         when(verificationRepository.findById(1L)).thenReturn(Optional.of(testVerification));
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         
         reviewRequest.setSustainabilityScore(null);
 
-        // Act & Assert
+        
         ProductVerificationException thrown = assertThrows(
             ProductVerificationException.class,
             () -> verificationService.reviewProduct(1L, reviewRequest, 1L)
         );
-        assertEquals("Duurzaamheidsscore is verplicht bij goedkeuring", thrown.getMessage());
+        assertEquals("Sustainability score is required for approval", thrown.getMessage());
         verify(verificationRepository, never()).save(any(ProductVerification.class));
     }
 
     @Test
     void reviewProduct_WithNonExistingVerification_ThrowsException() {
-        // Arrange
+        
         when(verificationRepository.findById(999L)).thenReturn(Optional.empty());
         
-        // Act & Assert
+        
         VerificationNotFoundException thrown = assertThrows(
             VerificationNotFoundException.class,
             () -> verificationService.reviewProduct(999L, reviewRequest, 1L)
@@ -234,15 +234,15 @@ class ProductVerificationServiceTest {
 
     @Test
     void getPendingVerifications_WithExistingVerifications_ReturnsList() {
-        // Arrange
+        
         when(verificationRepository.findByStatus(VerificationStatus.PENDING))
             .thenReturn(Arrays.asList(testVerification));
         when(verificationMapper.toResponse(testVerification)).thenReturn(testVerificationResponse);
 
-        // Act
+        
         List<VerificationResponse> results = verificationService.getPendingVerifications();
 
-        // Assert
+        
         assertNotNull(results);
         assertEquals(1, results.size());
         assertEquals(VerificationStatus.PENDING, results.get(0).getStatus());
@@ -252,14 +252,14 @@ class ProductVerificationServiceTest {
 
     @Test
     void getPendingVerifications_WithNoVerifications_ReturnsEmptyList() {
-        // Arrange
+        
         when(verificationRepository.findByStatus(VerificationStatus.PENDING))
             .thenReturn(Collections.emptyList());
 
-        // Act
+        
         List<VerificationResponse> results = verificationService.getPendingVerifications();
 
-        // Assert
+        
         assertNotNull(results);
         assertTrue(results.isEmpty());
         verify(verificationRepository).findByStatus(VerificationStatus.PENDING);
@@ -267,7 +267,7 @@ class ProductVerificationServiceTest {
 
     @Test
     void reviewProduct_WithRejectionStatus_NoScoreRequired() {
-        // Arrange
+        
         when(verificationRepository.findById(1L)).thenReturn(Optional.of(testVerification));
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         
@@ -287,10 +287,10 @@ class ProductVerificationServiceTest {
         when(verificationRepository.save(any(ProductVerification.class))).thenReturn(testVerification);
         when(verificationMapper.toResponse(testVerification)).thenReturn(rejectedResponse);
 
-        // Act
+        
         VerificationResponse result = verificationService.reviewProduct(1L, reviewRequest, 1L);
 
-        // Assert
+        
         assertNotNull(result);
         assertEquals(VerificationStatus.REJECTED, result.getStatus());
         assertNull(result.getSustainabilityScore());
@@ -300,7 +300,7 @@ class ProductVerificationServiceTest {
     
     @Test
     void getVerificationsByProduct_ReturnsVerificationsList() {
-        // Arrange
+        
         when(verificationRepository.findByProductId(1L))
             .thenReturn(Arrays.asList(testVerification));
         when(verificationMapper.toResponse(testVerification)).thenReturn(testVerificationResponse);
@@ -308,7 +308,7 @@ class ProductVerificationServiceTest {
         // Act
         List<VerificationResponse> results = verificationService.getVerificationsByProduct(1L);
 
-        // Assert
+        
         assertNotNull(results);
         assertEquals(1, results.size());
         assertEquals(1L, results.get(0).getProductId());

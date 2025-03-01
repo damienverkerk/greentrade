@@ -218,16 +218,23 @@ public ResponseEntity<CertificateResponse> uploadCertificateFile(
             return ResponseEntity.notFound().build();
         }
 
-        fileStorageService.validateFileType(
-            file, 
-            fileValidationConfig.getAllowedExtensions().toArray(String[]::new)
-        );
+        // Validate file type - we'll explicitly handle InvalidFileException
+        try {
+            fileStorageService.validateFileType(
+                file, 
+                fileValidationConfig.getAllowedExtensions().toArray(String[]::new)
+            );
+        } catch (InvalidFileException e) {
+            // Correct response for invalid file is 400 Bad Request
+            return ResponseEntity.badRequest().build();
+        }
         
         String fileName = fileStorageService.storeFile(file);
         CertificateResponse updatedCertificate = certificateService.updateCertificateFile(id, fileName);
         
         return ResponseEntity.ok(updatedCertificate);
     } catch (InvalidFileException e) {
+        // If we catch InvalidFileException here as well, return 400
         return ResponseEntity.badRequest().build();
     } catch (Exception e) {
         return ResponseEntity.internalServerError().build();

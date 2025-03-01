@@ -215,7 +215,7 @@ class AuthenticationServiceTest {
         SecurityException thrown = assertThrows(SecurityException.class, () -> 
             authenticationService.authenticate(validLoginRequest)
         );
-        assertEquals("Account is gedeactiveerd", thrown.getMessage());
+        assertEquals("Account is disabled", thrown.getMessage());
     }
 
     @Test

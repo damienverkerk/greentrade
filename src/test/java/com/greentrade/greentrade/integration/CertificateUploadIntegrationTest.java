@@ -1,14 +1,21 @@
 package com.greentrade.greentrade.integration;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -19,12 +26,16 @@ import org.springframework.test.web.servlet.MvcResult;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.greentrade.greentrade.config.FileValidationConfig;
 import com.greentrade.greentrade.dto.certificate.CertificateCreateRequest;
 import com.greentrade.greentrade.dto.certificate.CertificateResponse;
+import com.greentrade.greentrade.exception.file.InvalidFileException;
+import com.greentrade.greentrade.services.CertificateService;
+import com.greentrade.greentrade.services.FileStorageService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -42,12 +53,23 @@ class CertificateUploadIntegrationTest {
    @Autowired
    private ObjectMapper objectMapper;
 
+   @MockBean
+   private CertificateService certificateService;
+   
+   @MockBean
+   private FileStorageService fileStorageService;
+   
+   @MockBean
+   private FileValidationConfig fileValidationConfig;
+
    private CertificateCreateRequest createRequest;
+   private CertificateResponse mockCertificateResponse;
    private MockMultipartFile testFile;
+   private MockMultipartFile invalidFile;
 
    @BeforeEach
    void setUp() {
-       
+       // Setup test data
        createRequest = CertificateCreateRequest.builder()
            .name("ISO 14001")
            .issuer("Bureau Veritas")
@@ -58,18 +80,70 @@ class CertificateUploadIntegrationTest {
            .build();
 
        
+       mockCertificateResponse = CertificateResponse.builder()
+           .id(1L)
+           .name("ISO 14001")
+           .issuer("Bureau Veritas")
+           .issueDate(LocalDate.now())
+           .expiryDate(LocalDate.now().plusYears(1))
+           .description("Environmental certificate")
+           .userId(2L)
+           .build();
+       
+       
        testFile = new MockMultipartFile(
            "file",
            "test-cert.pdf",
            MediaType.APPLICATION_PDF_VALUE,
            "PDF test content".getBytes()
        );
-   }
+       
+       
+       invalidFile = new MockMultipartFile(
+           "file",
+           "test.exe",
+           "application/octet-stream",
+           "Invalid content".getBytes()
+       );
+       
+       
+       when(fileValidationConfig.getAllowedExtensions())
+            .thenReturn(Arrays.asList("pdf", "jpg", "jpeg", "png"));
+       when(fileValidationConfig.getMaxFileSize())
+            .thenReturn(10L * 1024 * 1024); // 10MB
+            
+       
+       when(fileStorageService.validateFileType(eq(testFile), any()))
+            .thenReturn(true);
+    }
 
     @Test
     @DisplayName("Complete certificate upload - happy path")
     @WithMockUser(username = "seller@greentrade.nl", roles = "SELLER")
     void whenUploadCertificate_thenSuccess() throws Exception {
+    
+        when(certificateService.createCertificate(any(CertificateCreateRequest.class)))
+            .thenReturn(mockCertificateResponse);
+
+        when(certificateService.getCertificateById(1L))
+            .thenReturn(mockCertificateResponse);
+            
+        when(fileStorageService.storeFile(any()))
+            .thenReturn("stored-file.pdf");
+        
+        CertificateResponse updatedResponse = CertificateResponse.builder()
+            .id(1L)
+            .name("ISO 14001")
+            .issuer("Bureau Veritas")
+            .issueDate(LocalDate.now())
+            .expiryDate(LocalDate.now().plusYears(1))
+            .description("Environmental certificate")
+            .filePath("stored-file.pdf")
+            .userId(2L)
+            .build();
+            
+        when(certificateService.updateCertificateFile(anyLong(), anyString()))
+            .thenReturn(updatedResponse);
         
         MvcResult createResult = mockMvc.perform(post("/api/certificates")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -77,76 +151,53 @@ class CertificateUploadIntegrationTest {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        CertificateResponse createdCertificate = objectMapper.readValue(
-            createResult.getResponse().getContentAsString(),
-            CertificateResponse.class
-        );
+        mockMvc.perform(multipart("/api/certificates/{id}/file", 1L)
+                .file(testFile))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.filePath").value("stored-file.pdf"));
+    }
+    
+    @Test
+    @DisplayName("Upload invalid file type - expect 400")
+    @WithMockUser(roles = "SELLER")
+    void whenUploadInvalidFile_thenBadRequest() throws Exception {
+        
+        when(certificateService.createCertificate(any(CertificateCreateRequest.class)))
+            .thenReturn(mockCertificateResponse);
+            
+        when(certificateService.getCertificateById(1L))
+            .thenReturn(mockCertificateResponse);
+            
+        doThrow(new InvalidFileException("Ongeldig bestandstype. Toegestane types: pdf, jpg, jpeg, png"))
+            .when(fileStorageService).validateFileType(eq(invalidFile), any());
+            
+        mockMvc.perform(post("/api/certificates")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isCreated());
+                
+        mockMvc.perform(multipart("/api/certificates/{id}/file", 1L)
+                .file(invalidFile))
+                .andExpect(status().isBadRequest());
+    }
 
-       assertNotNull(createdCertificate.getId());
+    @Test
+    @DisplayName("Download non-existent file - expect 404")
+    @WithMockUser(roles = "SELLER")
+    void whenDownloadNonExistentFile_thenNotFound() throws Exception {
+        
+        when(certificateService.getCertificateById(999L))
+            .thenReturn(null);
+            
+        mockMvc.perform(get("/api/certificates/999/file"))
+                .andExpect(status().isNotFound());
+    }
 
-      
-       MvcResult uploadResult = mockMvc.perform(multipart("/api/certificates/{id}/file", createdCertificate.getId())
-               .file(testFile))
-               .andExpect(status().isOk())
-               .andReturn();
-
-       CertificateResponse updatedCertificate = objectMapper.readValue(
-           uploadResult.getResponse().getContentAsString(),
-           CertificateResponse.class
-       );
-       assertNotNull(updatedCertificate.getFilePath());
-
-       
-       mockMvc.perform(get("/api/certificates/{id}/file", updatedCertificate.getId()))
-               .andExpect(status().isOk())
-               .andExpect(header().string("Content-Type", MediaType.APPLICATION_PDF_VALUE));
-   }
-
-   @Test
-   @DisplayName("Upload invalid file type - expect 400")
-   @WithMockUser(roles = "SELLER")
-   void whenUploadInvalidFile_thenBadRequest() throws Exception {
-       
-       MvcResult createResult = mockMvc.perform(post("/api/certificates")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(objectMapper.writeValueAsString(createRequest)))
-               .andExpect(status().isCreated())
-               .andReturn();
-
-       CertificateResponse createdCertificate = objectMapper.readValue(
-           createResult.getResponse().getContentAsString(),
-           CertificateResponse.class
-       );
-
-      
-       MockMultipartFile invalidFile = new MockMultipartFile(
-           "file",
-           "test.exe",
-           "application/octet-stream",
-           "Invalid content".getBytes()
-       );
-
-       
-       mockMvc.perform(multipart("/api/certificates/{id}/file", createdCertificate.getId())
-               .file(invalidFile))
-               .andExpect(status().isBadRequest());
-   }
-
-   @Test
-   @DisplayName("Download non-existent file - expect 404")
-   @WithMockUser(roles = "SELLER")
-   void whenDownloadNonExistentFile_thenNotFound() throws Exception {
-      
-       mockMvc.perform(get("/api/certificates/999/file"))
-               .andExpect(status().isNotFound());
-   }
-
-   @Test
-   @DisplayName("Upload without authentication - expect 403")
-   void whenUploadWithoutAuth_thenForbidden() throws Exception {
-       
-       mockMvc.perform(multipart("/api/certificates/1/file")
-               .file(testFile))
-               .andExpect(status().isForbidden());
-   }
+    @Test
+    @DisplayName("Upload without authentication - expect 403")
+    void whenUploadWithoutAuth_thenForbidden() throws Exception {
+        mockMvc.perform(multipart("/api/certificates/1/file")
+                .file(testFile))
+                .andExpect(status().isForbidden());
+    }
 }

@@ -141,7 +141,7 @@ public class ValidationExceptionHandler {
     @ExceptionHandler(DuplicateVerificationException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateVerificationException(DuplicateVerificationException ex) {
         ErrorResponse error = new ErrorResponse(
-            HttpStatus.CONFLICT.value(),  // Use 409 CONFLICT instead of 400 BAD_REQUEST
+            HttpStatus.CONFLICT.value(),  // Gebruik 409 CONFLICT in plaats van 400
             ex.getMessage(),
             LocalDateTime.now()
         );
@@ -168,4 +168,5 @@ public class ValidationExceptionHandler {
         );
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+    
 }

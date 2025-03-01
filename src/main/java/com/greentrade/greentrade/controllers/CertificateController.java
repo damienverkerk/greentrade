@@ -233,6 +233,7 @@ public class CertificateController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
+
     }
 
     @Operation(

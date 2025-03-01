@@ -1,3 +1,4 @@
+// ProductVerificationFlowIntegrationTest.java update
 package com.greentrade.greentrade.integration;
 
 import java.math.BigDecimal;
@@ -39,8 +40,8 @@ import com.greentrade.greentrade.services.ProductVerificationService;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
-    "spring.jpa.hibernate.ddl-auto=create-drop",
-    "spring.sql.init.mode=never"
+   "spring.jpa.hibernate.ddl-auto=create-drop",
+   "spring.sql.init.mode=never"
 })
 @DisplayName("Product Verification Flow Integration Tests")
 class ProductVerificationFlowIntegrationTest {

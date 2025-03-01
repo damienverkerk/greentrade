@@ -219,21 +219,22 @@ public class CertificateController {
         }
 
         try {
-            
+            // Validate file type
             String[] allowedExtensions = fileValidationConfig.getAllowedExtensions().toArray(String[]::new);
             fileStorageService.validateFileType(file, allowedExtensions);
             
+            // Store file and update certificate
             String fileName = fileStorageService.storeFile(file);
             CertificateResponse updatedCertificate = certificateService.updateCertificateFile(id, fileName);
             
+            // Return successful response with updated certificate
             return ResponseEntity.ok(updatedCertificate);
         } catch (InvalidFileException e) {
-            
+            // Return 400 Bad Request for invalid files
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
-
     }
 
     @Operation(

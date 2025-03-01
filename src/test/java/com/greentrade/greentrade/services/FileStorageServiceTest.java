@@ -99,7 +99,7 @@ class FileStorageServiceTest {
        InvalidFileException exception = assertThrows(InvalidFileException.class, () -> 
            fileStorageService.storeFile(largeFile)
        );
-       assertTrue(exception.getMessage().contains("Bestand is te groot"));
+       assertTrue(exception.getMessage().contains("File is too large"));
    }
    
    @Test
@@ -187,7 +187,7 @@ class FileStorageServiceTest {
        InvalidFileException exception = assertThrows(InvalidFileException.class, () -> 
            fileStorageService.validateFileType(file, "pdf", "jpg", "png")
        );
-       assertTrue(exception.getMessage().contains("Ongeldig bestandstype"));
+       assertTrue(exception.getMessage().contains("Invalid file type"));
    }
    
    @Test

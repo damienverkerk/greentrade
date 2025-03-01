@@ -50,8 +50,8 @@ public class ProductVerificationController {
             VerificationResponse verification = verificationService.submitForVerification(productId);
             
             URI location = ServletUriComponentsBuilder
-                    .fromCurrentRequest()
-                    .replacePath("/api/verifications/{id}")
+                    .fromCurrentContextPath()
+                    .path("/api/verifications/{id}")
                     .buildAndExpand(verification.getId())
                     .toUri();
             
@@ -71,7 +71,7 @@ public class ProductVerificationController {
     @ApiResponse(responseCode = "400", description = "Invalid review data")
     @ApiResponse(responseCode = "404", description = "Verification not found")
     @PostMapping("/{verificationId}/review")
-    @PreAuthorize("hasRole('ADMIN')")  // Ensure this annotation is correct
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VerificationResponse> reviewProduct(
             @Parameter(description = "ID of the verification", required = true)
             @PathVariable Long verificationId,

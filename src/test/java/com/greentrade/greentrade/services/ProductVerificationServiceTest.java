@@ -130,31 +130,31 @@ class ProductVerificationServiceTest {
 
     @Test
     void submitForVerification_WithNonExistingProduct_ThrowsException() {
-        
+        // Arrange
         when(productRepository.findById(999L)).thenReturn(Optional.empty());
     
-        
+        // Act & Assert
         ProductNotFoundException thrown = assertThrows(
             ProductNotFoundException.class,  
             () -> verificationService.submitForVerification(999L)
         );
-        assertEquals("Product niet gevonden met ID: 999", thrown.getMessage());
+        assertEquals("Product not found with ID: 999", thrown.getMessage());
         verify(verificationRepository, never()).save(any(ProductVerification.class));
     }
 
     @Test
     void submitForVerification_WithExistingPendingVerification_ThrowsException() {
-        
+        // Arrange
         when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
         when(verificationRepository.findFirstByProductOrderBySubmissionDateDesc(testProduct))
             .thenReturn(Optional.of(testVerification));
 
-        
+        // Act & Assert
         DuplicateVerificationException thrown = assertThrows(
             DuplicateVerificationException.class, 
             () -> verificationService.submitForVerification(1L)
         );
-        assertEquals("Er is al een lopende verificatie voor product met ID: 1", thrown.getMessage());
+        assertEquals("An active verification already exists for product with ID: 1", thrown.getMessage());
         verify(verificationRepository, never()).save(any(ProductVerification.class));
     }
 
@@ -220,15 +220,15 @@ class ProductVerificationServiceTest {
 
     @Test
     void reviewProduct_WithNonExistingVerification_ThrowsException() {
-        
+        // Arrange
         when(verificationRepository.findById(999L)).thenReturn(Optional.empty());
         
-        
+        // Act & Assert
         VerificationNotFoundException thrown = assertThrows(
             VerificationNotFoundException.class,
             () -> verificationService.reviewProduct(999L, reviewRequest, 1L)
         );
-        assertEquals("Verificatie niet gevonden met ID: 999", thrown.getMessage());
+        assertEquals("Verification not found with ID: 999", thrown.getMessage());
         verify(verificationRepository, never()).save(any(ProductVerification.class));
     }
 

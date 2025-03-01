@@ -64,7 +64,7 @@ class ProductVerificationFlowIntegrationTest {
 
    @BeforeEach
    void setUp() {
-       // Setup test data
+       
        createRequest = ProductCreateRequest.builder()
            .name("Duurzame Bureaustoel")
            .description("Ergonomische bureaustoel van gerecycled materiaal")
@@ -78,7 +78,7 @@ class ProductVerificationFlowIntegrationTest {
            .reviewerNotes("Product voldoet aan duurzaamheidscriteria")
            .build();
            
-       // Create mock responses
+       
        mockProductResponse = ProductResponse.builder()
            .id(1L)
            .name("Duurzame Bureaustoel")
@@ -99,7 +99,7 @@ class ProductVerificationFlowIntegrationTest {
    @DisplayName("Complete verification flow - happy path")
    @WithMockUser(username = "seller@greentrade.nl", roles = {"SELLER", "ADMIN"})
    void completeVerificationFlow() throws Exception {
-       // Mock service responses
+       
        when(productService.createProduct(any(ProductCreateRequest.class)))
            .thenReturn(mockProductResponse);
        
@@ -118,14 +118,14 @@ class ProductVerificationFlowIntegrationTest {
        when(verificationService.reviewProduct(anyLong(), any(VerificationReviewRequest.class), anyLong()))
            .thenReturn(approvedResponse);
        
-       // Create product
+       
        MvcResult createResult = mockMvc.perform(post("/api/products")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(createRequest)))
             .andExpect(status().isCreated())
             .andReturn();
 
-       // Submit for verification
+       
        MvcResult submitResult = mockMvc.perform(post("/api/verifications/products/{id}/submit", 
                mockProductResponse.getId()))
                .andExpect(status().isCreated())
@@ -146,17 +146,17 @@ class ProductVerificationFlowIntegrationTest {
    @DisplayName("Review without score gives 400") 
    @WithMockUser(roles = "ADMIN")
    void reviewWithoutScore_ReturnsBadRequest() throws Exception {
-       // Setup invalid request (missing score)
+       
        VerificationReviewRequest invalidRequest = VerificationReviewRequest.builder()
            .status(VerificationStatus.APPROVED)
            .reviewerNotes("Missing score")
            .build();
        
-       // Mock behavior to throw exception for missing score
+       
        when(verificationService.reviewProduct(anyLong(), any(VerificationReviewRequest.class), anyLong()))
            .thenThrow(new ProductVerificationException("Sustainability score is required for approval"));
            
-       // Test the endpoint
+      
        mockMvc.perform(post("/api/verifications/1/review")
                .param("reviewerId", "1")
                .contentType(MediaType.APPLICATION_JSON)
@@ -166,24 +166,24 @@ class ProductVerificationFlowIntegrationTest {
    
    @Test
    @DisplayName("Rejection with reason succeeds")
-   @WithMockUser(username = "admin@example.com", roles = "ADMIN")
+   @WithMockUser(username = "admin@example.com", roles = {"ADMIN", "SELLER"})
    void reviewWithRejection_Succeeds() throws Exception {
-       // Mock product creation
+       
        when(productService.createProduct(any(ProductCreateRequest.class)))
            .thenReturn(mockProductResponse);
            
-       // Mock verification submission
+       
        when(verificationService.submitForVerification(anyLong()))
            .thenReturn(mockVerificationResponse);
        
-       // Setup rejection request
+       
        VerificationReviewRequest rejectionRequest = VerificationReviewRequest.builder()
            .status(VerificationStatus.REJECTED)
            .rejectionReason("Product voldoet niet aan de duurzaamheidscriteria")
            .reviewerNotes("Afgewezen vanwege materiaalgebruik")
            .build();
 
-       // Mock response for rejection
+       
        VerificationResponse rejectedResponse = VerificationResponse.builder()
            .id(1L)
            .productId(1L)
@@ -196,25 +196,17 @@ class ProductVerificationFlowIntegrationTest {
        when(verificationService.reviewProduct(anyLong(), any(VerificationReviewRequest.class), anyLong()))
            .thenReturn(rejectedResponse);
 
-       // First create a product with seller role
+       
        mockMvc.perform(post("/api/products")
-               .with(request -> {
-                   request.setAttribute("SPRING_SECURITY_CONTEXT", org.springframework.security.core.context.SecurityContextHolder.createEmptyContext());
-                   return request;
-               })
                .contentType(MediaType.APPLICATION_JSON)
                .content(objectMapper.writeValueAsString(createRequest)))
                .andExpect(status().isCreated());
 
-       // Submit for verification
-       mockMvc.perform(post("/api/verifications/products/{id}/submit", 1L)
-               .with(request -> {
-                   request.setAttribute("SPRING_SECURITY_CONTEXT", org.springframework.security.core.context.SecurityContextHolder.createEmptyContext());
-                   return request;
-               }))
+       
+       mockMvc.perform(post("/api/verifications/products/{id}/submit", 1L))
                .andExpect(status().isCreated());
 
-       // Review and reject verification
+       
        mockMvc.perform(post("/api/verifications/{id}/review", 1L)
                .param("reviewerId", "1")
                .contentType(MediaType.APPLICATION_JSON)
@@ -227,7 +219,7 @@ class ProductVerificationFlowIntegrationTest {
    @Test
    @DisplayName("Submit without authentication gives 403")
    void submitWithoutAuth_ReturnsForbidden() throws Exception {
-       // Try to submit without auth
+       
        mockMvc.perform(post("/api/verifications/products/1/submit"))
                .andExpect(status().isForbidden());
    }
@@ -236,11 +228,11 @@ class ProductVerificationFlowIntegrationTest {
    @DisplayName("Submit non-existent product gives 404")
    @WithMockUser(roles = "SELLER")
    void submitNonExistentProduct_Returns404() throws Exception {
-       // Mock ProductNotFoundException being thrown
+       
        when(verificationService.submitForVerification(eq(999L)))
            .thenThrow(new ProductNotFoundException(999L));
        
-       // Try to submit non-existent product
+       
        mockMvc.perform(post("/api/verifications/products/999/submit"))
                .andExpect(status().isNotFound());
    }

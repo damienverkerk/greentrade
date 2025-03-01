@@ -130,7 +130,7 @@ class ProductServiceTest {
             ProductNotFoundException.class,
             () -> productService.getProductById(999L)
         );
-        assertEquals("Product niet gevonden met ID: 999", thrown.getMessage());
+        assertEquals("Product not found with ID: 999", thrown.getMessage());
     }
     
     @Test
@@ -219,7 +219,7 @@ class ProductServiceTest {
             ProductNotFoundException.class,
             () -> productService.deleteProduct(999L)
         );
-        assertEquals("Product niet gevonden met ID: 999", thrown.getMessage());
+        assertEquals("Product not found with ID: 999", thrown.getMessage());
         verify(productRepository, never()).deleteById(anyLong());
     }
 
@@ -273,7 +273,7 @@ class ProductServiceTest {
             ProductNotFoundException.class,
             () -> productService.updateProduct(999L, updateRequest)
         );
-        assertEquals("Product niet gevonden met ID: 999", thrown.getMessage());
+        assertEquals("Product not found with ID: 999", thrown.getMessage());
         verify(productRepository, never()).save(any(Product.class));
     }
 
@@ -351,6 +351,6 @@ class ProductServiceTest {
             UserNotFoundException.class,
             () -> productService.getProductsBySeller(999L)
         );
-        assertEquals("Gebruiker niet gevonden met ID: 999", thrown.getMessage());
+        assertEquals("User not found with ID: 999", thrown.getMessage());
     }
 }

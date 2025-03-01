@@ -87,15 +87,15 @@ class ProductVerificationControllerIntegrationTest {
     @Test
     @WithMockUser(roles = "SELLER")
     void whenSubmitVerificationWithExistingVerification_thenConflict() throws Exception {
-        
+        // Arrange
         when(verificationService.submitForVerification(anyLong()))
             .thenThrow(new DuplicateVerificationException(1L));
 
-        
+        // Act & Assert
         mockMvc.perform(post("/api/verifications/products/1/submit")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Er is al een lopende verificatie voor product met ID: 1"));
+                .andExpect(jsonPath("$.message").value("An active verification already exists for product with ID: 1"));
     }
     
     @Test

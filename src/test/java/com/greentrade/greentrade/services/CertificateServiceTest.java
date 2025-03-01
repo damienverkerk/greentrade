@@ -175,7 +175,7 @@ class CertificateServiceTest {
             UserNotFoundException.class,
             () -> certificateService.getCertificatesForUser(99L)
         );
-        assertEquals("Gebruiker niet gevonden met ID: 99", thrown.getMessage());
+        assertEquals("User not found with ID: 99", thrown.getMessage());
         verify(userRepository, times(1)).findById(99L);
     }
 
@@ -292,4 +292,5 @@ class CertificateServiceTest {
         verify(fileStorageService, times(1)).deleteFile("file-to-delete.pdf");
         verify(certificateRepository, times(1)).deleteById(1L);
     }
+    
 }

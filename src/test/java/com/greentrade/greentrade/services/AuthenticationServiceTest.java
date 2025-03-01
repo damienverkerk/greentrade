@@ -194,15 +194,15 @@ class AuthenticationServiceTest {
 
     @Test
     void authenticate_WithInvalidCredentials_ThrowsInvalidCredentialsException() {
-        
+        // Arrange
         when(authenticationManager.authenticate(any()))
             .thenThrow(new BadCredentialsException("Invalid credentials"));
 
-        
+        // Act & Assert
         InvalidCredentialsException thrown = assertThrows(InvalidCredentialsException.class, () -> 
             authenticationService.authenticate(validLoginRequest)
         );
-        assertEquals("Ongeldige inloggegevens", thrown.getMessage());
+        assertEquals("Invalid login credentials", thrown.getMessage());
     }
 
     @Test
@@ -220,15 +220,15 @@ class AuthenticationServiceTest {
 
     @Test
     void authenticate_WithNonExistentUser_ThrowsUserNotFoundException() {
-        
+        // Arrange
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
             .thenReturn(new UsernamePasswordAuthenticationToken(testUser, null));
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
-        
+        // Act & Assert
         UserNotFoundException thrown = assertThrows(UserNotFoundException.class, () -> 
             authenticationService.authenticate(validLoginRequest)
         );
-        assertEquals("Gebruiker niet gevonden met email: test@example.com", thrown.getMessage());
+        assertEquals("User not found with email: test@example.com", thrown.getMessage());
     }
 }

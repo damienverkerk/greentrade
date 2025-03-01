@@ -198,10 +198,11 @@ public ResponseEntity<List<CertificateResponse>> getExpiredCertificates(
     return ResponseEntity.ok(expiredCertificates);
 }
 
+// CertificateController.java - Pas de uploadCertificateFile methode aan
 @Operation(
     summary = "Upload a certificate file",
     description = "Upload a PDF or image file for a certificate. " +
-                 "Allowed file types: PDF, JPG, PNG."
+                "Allowed file types: PDF, JPG, PNG."
 )
 @ApiResponses({
     @ApiResponse(responseCode = "200", description = "File successfully uploaded"),
@@ -212,31 +213,28 @@ public ResponseEntity<List<CertificateResponse>> getExpiredCertificates(
 public ResponseEntity<CertificateResponse> uploadCertificateFile(
     @PathVariable Long id,
     @RequestParam("file") MultipartFile file) {
-    try {
-        CertificateResponse certificate = certificateService.getCertificateById(id);
-        if (certificate == null) {
-            return ResponseEntity.notFound().build();
-        }
+    
+    CertificateResponse certificate = certificateService.getCertificateById(id);
+    if (certificate == null) {
+        return ResponseEntity.notFound().build();
+    }
 
-        // Validate file type - we'll explicitly handle InvalidFileException
-        try {
-            fileStorageService.validateFileType(
-                file, 
-                fileValidationConfig.getAllowedExtensions().toArray(String[]::new)
-            );
-        } catch (InvalidFileException e) {
-            // Correct response for invalid file is 400 Bad Request
-            return ResponseEntity.badRequest().build();
-        }
+    try {
+        String[] allowedExtensions = fileValidationConfig.getAllowedExtensions().toArray(String[]::new);
+        System.out.println("Debug: About to validate file type");
+        fileStorageService.validateFileType(file, allowedExtensions);
+        System.out.println("Debug: File validation passed");
         
         String fileName = fileStorageService.storeFile(file);
         CertificateResponse updatedCertificate = certificateService.updateCertificateFile(id, fileName);
         
         return ResponseEntity.ok(updatedCertificate);
     } catch (InvalidFileException e) {
-        // If we catch InvalidFileException here as well, return 400
-        return ResponseEntity.badRequest().build();
+        System.out.println("Debug: Caught InvalidFileException: " + e.getMessage());
+        // Zorg dat deze exception echt een 400 status teruggeeft
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
     } catch (Exception e) {
+        System.out.println("Debug: Caught other exception: " + e.getClass().getName() + ": " + e.getMessage());
         return ResponseEntity.internalServerError().build();
     }
 }

@@ -40,7 +40,7 @@ public class ProductVerificationController {
         summary = "Submit product for verification",
         description = "Sellers can submit their products for sustainability verification"
     )
-    @ApiResponse(responseCode = "200", description = "Product successfully submitted for verification")
+    @ApiResponse(responseCode = "201", description = "Product successfully submitted for verification")
     @ApiResponse(responseCode = "400", description = "Product already has a pending verification")
     @ApiResponse(responseCode = "404", description = "Product not found")
     @PostMapping("/products/{productId}/submit")
@@ -71,7 +71,7 @@ public class ProductVerificationController {
     @ApiResponse(responseCode = "400", description = "Invalid review data")
     @ApiResponse(responseCode = "404", description = "Verification not found")
     @PostMapping("/{verificationId}/review")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")  // Ensure this annotation is correct
     public ResponseEntity<VerificationResponse> reviewProduct(
             @Parameter(description = "ID of the verification", required = true)
             @PathVariable Long verificationId,
@@ -79,7 +79,12 @@ public class ProductVerificationController {
             @Valid @RequestBody VerificationReviewRequest dto,
             @Parameter(description = "ID of the reviewer", required = true)
             @RequestParam Long reviewerId) {
-        return ResponseEntity.ok(verificationService.reviewProduct(verificationId, dto, reviewerId));
+        
+        // Let's ensure we return the correct HTTP status
+        VerificationResponse response = verificationService.reviewProduct(verificationId, dto, reviewerId);
+        
+        // For review operations, we return 200 OK, not 201 Created
+        return ResponseEntity.ok(response);
     }
 
     @Operation(

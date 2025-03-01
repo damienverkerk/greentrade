@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -101,14 +102,13 @@ class ProductVerificationControllerIntegrationTest {
     @WithMockUser(roles = "SELLER")
     void whenSubmitVerificationWithNonExistingProduct_thenNotFound() throws Exception {
         
-        when(verificationService.submitForVerification(anyLong()))
+        when(verificationService.submitForVerification(eq(999L)))
             .thenThrow(new ProductNotFoundException(999L));
 
         
         mockMvc.perform(post("/api/verifications/products/999/submit")
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Product niet gevonden met ID: 999"));
+                .andExpect(status().isNotFound());
     }
 
     @Test

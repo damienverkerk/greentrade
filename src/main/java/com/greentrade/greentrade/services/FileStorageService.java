@@ -64,13 +64,12 @@ public class FileStorageService {
     }    
     
     private void validateFile(MultipartFile file) {
-        // Nullcheck voor het file object zelf
-        validateFileType(file, fileValidationConfig.getAllowedExtensions().toArray(String[]::new));
+        // Null check for the file object itself
         if (file == null) {
             throw new InvalidFileException("Bestand mag niet null zijn");
         }
     
-        // Check voor null original filename
+        // Check for null original filename
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null) {
             throw new InvalidFileException("Bestandsnaam mag niet null zijn");
@@ -82,7 +81,7 @@ public class FileStorageService {
     
         String fileName = StringUtils.cleanPath(originalFilename);
         
-        // Check voor malicious bestandsnamen
+        // Check for malicious filenames
         if (fileName.contains("..")) {
             throw new InvalidFileException("Bestandsnaam bevat ongeldige karakters: " + fileName);
         }
@@ -90,6 +89,9 @@ public class FileStorageService {
         if (file.getSize() > fileValidationConfig.getMaxFileSize()) {
             throw InvalidFileException.tooLarge(fileValidationConfig.getMaxFileSize());
         }
+        
+        // Validate file type
+        validateFileType(file, fileValidationConfig.getAllowedExtensions().toArray(String[]::new));
     }
     
     private String generateUniqueFileName(MultipartFile file) {

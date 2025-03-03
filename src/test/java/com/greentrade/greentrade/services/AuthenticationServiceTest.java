@@ -171,6 +171,20 @@ class AuthenticationServiceTest {
             thrown.getMessage());
         verify(userRepository, never()).save(any(User.class));
     }
+    
+    @Test
+    void register_WithNullPassword_ThrowsSecurityException() {
+        // Arrange
+        validRegisterRequest.setPassword(null);
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+
+        // Act & Assert
+        SecurityException thrown = assertThrows(SecurityException.class, () -> 
+            authenticationService.register(validRegisterRequest)
+        );
+        assertTrue(thrown.getMessage().contains("must be at least 8 characters long"));
+        verify(userRepository, never()).save(any(User.class));
+    }
 
     @Test
     void authenticate_WithValidCredentials_ReturnsToken() {

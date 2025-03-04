@@ -1,5 +1,7 @@
 package com.greentrade.greentrade.services;
 
+import java.util.Optional;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -41,15 +43,38 @@ public class AuthenticationService {
 
     public AuthResponse authenticate(LoginRequest request) {
         try {
-            authenticateUser(request.getEmail(), request.getPassword());
+            Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                System.out.println("DB password: " + user.getPassword());
+                boolean matches = passwordEncoder.matches(request.getPassword(), user.getPassword());
+                System.out.println("Matches: " + matches);
+                // Als het niet overeenkomt, probeer een test met een nieuwe hash
+                if (!matches) {
+                    String testHash = passwordEncoder.encode("password123");
+                    System.out.println("Test hash: " + testHash);
+                    System.out.println("Test matches: " + passwordEncoder.matches("password123", testHash));
+                }
+            } else {
+                System.out.println("Gebruiker niet gevonden in de database");
+            }
             
-            var user = findUserByEmail(request.getEmail());
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
+            
+            var user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new UserNotFoundException(request.getEmail()));
             var jwtToken = jwtService.generateToken(user);
             
             return createAuthResponse(jwtToken, user);
         } catch (DisabledException e) {
             throw new SecurityException("Account is disabled");
         } catch (BadCredentialsException e) {
+            e.printStackTrace();
             throw new InvalidCredentialsException();
         }
     }

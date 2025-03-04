@@ -7,9 +7,9 @@ VALUES
 -- Password is 'password123' encoded with BCrypt
 INSERT INTO users (id, name, email, password, role, verification_status, certificate_id) 
 VALUES
-(1, 'Admin User', 'admin@greentrade.nl', '$2a$10$aWwX5CJY1K9qjD.OB0M7QOQz8CxjFqYfZRB5CPqKhiVtQqcU1OUje', 'ROLE_ADMIN', true, 1),
-(2, 'Seller Company', 'seller@greentrade.nl', '$2a$10$aWwX5CJY1K9qjD.OB0M7QOQz8CxjFqYfZRB5CPqKhiVtQqcU1OUje', 'ROLE_SELLER', true, 2),
-(3, 'Test Buyer', 'buyer@greentrade.nl', '$2a$10$aWwX5CJY1K9qjD.OB0M7QOQz8CxjFqYfZRB5CPqKhiVtQqcU1OUje', 'ROLE_BUYER', true, null);
+(1, 'Admin User', 'admin@greentrade.nl', '$2a$10$WHMDrzlU95I/ZuUTU2Piie7tFLpi7w8TMzCQQ7Kjb8HyD9qI2YrEG', 'ROLE_ADMIN', true, 1),
+(2, 'Seller Company', 'seller@greentrade.nl', '$2a$10$WHMDrzlU95I/ZuUTU2Piie7tFLpi7w8TMzCQQ7Kjb8HyD9qI2YrEG', 'ROLE_SELLER', true, 2),
+(3, 'Test Buyer', 'buyer@greentrade.nl', '$2a$10$WHMDrzlU95I/ZuUTU2Piie7tFLpi7w8TMzCQQ7Kjb8HyD9qI2YrEG', 'ROLE_BUYER', true, null);
 
 -- Products (seller_id references to the Seller Company user)
 INSERT INTO products (id, name, description, price, sustainability_score, sustainability_certificate, seller_id) 
@@ -41,3 +41,12 @@ INSERT INTO product_verifications (id, product_id, status, verification_date, re
 VALUES
 (1, 1, 'APPROVED', '2024-01-10 10:00:00', 'Product meets all sustainability criteria', 1, '2024-01-09 09:00:00', 85),
 (2, 2, 'PENDING', '2024-01-22 11:00:00', NULL, NULL, '2024-01-22 11:00:00', NULL);
+
+-- Reset sequences to continue from the highest ID values
+SELECT setval(pg_get_serial_sequence('certificates', 'id'), (SELECT MAX(id) FROM certificates));
+SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));
+SELECT setval(pg_get_serial_sequence('products', 'id'), (SELECT MAX(id) FROM products));
+SELECT setval(pg_get_serial_sequence('messages', 'id'), (SELECT MAX(id) FROM messages));
+SELECT setval(pg_get_serial_sequence('reviews', 'id'), (SELECT MAX(id) FROM reviews));
+SELECT setval(pg_get_serial_sequence('transactions', 'id'), (SELECT MAX(id) FROM transactions));
+SELECT setval(pg_get_serial_sequence('product_verifications', 'id'), (SELECT MAX(id) FROM product_verifications));
